@@ -134,7 +134,7 @@ def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
                 second_config_root = find_root(second_configuration, tree)
                 # If raw, explicitly store raw second_configuration, otherwise store symbolic ↓ || child_id
                 second_configuration = frozendict(second_configuration) if raw else DownArrow + str(second_config_root)
-                valid_transitions[frozendict(configuration)].add(frozendict(second_configuration))
+                valid_transitions[frozendict(configuration)].add(second_configuration)
                 # Add the other direction as second_configuration won't be enumerated
                 valid_transitions[second_configuration].add(frozendict(configuration))
 

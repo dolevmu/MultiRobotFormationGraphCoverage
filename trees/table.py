@@ -26,11 +26,11 @@ def compute_table(vertex: str, tree: Tree, num_robots: int) -> Table:
     children_tables = {child.identifier: compute_table(child.identifier, tree, num_robots) for child in tree.children(vertex)}
 
     # Enumerate signatures at vertex:
-    for signature in enumerate_signatures(vertex, tree, num_robots, raw=True):
+    for signature in enumerate_signatures(vertex, tree, num_robots, raw=False):
         if signature == [frozendict({'': 2}),
-                         frozendict({'0': 2}),
+                         DownArrow + '0',
                          frozendict({'': 2}),
-                         frozendict({'1': 2})]:
+                         DownArrow + '1']:
             print(signature)
 
         matched_keys = True
