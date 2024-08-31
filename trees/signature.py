@@ -149,10 +149,10 @@ def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
             down_configs = [second_configuration for second_configuration in enumerate_transitions(configuration, tree)
                             if set(second_configuration.keys()).issubset(inside_vertex - {vertex})]
             for down_config in down_configs:
-                down_configs_dict[find_root(down_config, tree)].add(down_config)
+                down_configs_dict[find_root(down_config, tree)].add(frozendict(down_config))
             for down_config in down_configs:
                 for config in down_configs_dict[find_root(down_config, tree)]:
-                    valid_transitions[frozendict(down_config)].update(valid_transitions[frozendict(config)])
+                    valid_transitions[frozendict(down_config)].update(valid_transitions[config])
 
     return valid_transitions, budget
 
@@ -174,9 +174,7 @@ def enumerate_signatures(vertex: str, tree: Tree, num_robots: int, raw: bool) ->
             used_transitions[current_signature[-1]].add(next_config)
         transition = (current_signature[-1], next_config)
         consumed_budget = sum(config1 == transition[0] and config2 == transition[1] for config1, config2 in zip(current_signature, current_signature[1:]))
-        if type(current_signature[-1]) is str:
-            transition = (transition[0], transition[1])
-        if consumed_budget + 1 == budget[transition]:
+        if consumed_budget + 1 == budget[transition] + budget[(transition[1], transition[0])]:
             used_transitions[current_signature[-1]].add(next_config)
         return used_transitions
 

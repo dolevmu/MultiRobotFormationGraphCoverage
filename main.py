@@ -36,10 +36,11 @@ if __name__ == '__main__':
     #                         for vertex in tree.nodes)
     # print(f"Signatures are {verify_signatures}.")
     #
-    # collected_signatures = enumerate_signatures("0", tree, 2, raw=True)
-    # print(len(collected_signatures))
-    #
-    # table = compute_table("0", tree, 2)
-    # print('done')
+    collected_signatures = enumerate_signatures("0", tree, 2, raw=True)
+    print(len(collected_signatures))
 
-    print(fpt_compute_traversal_time(tree, 2))
+    # table = compute_table("0", tree, 2)
+    # for entry in table.values():
+    #     print(entry.signature)
+
+    # print(fpt_compute_traversal_time(tree, 2))
