@@ -5,7 +5,7 @@ from frozendict import frozendict
 from treelib import Tree
 from typing import Tuple, Union, Dict, Set, List
 
-from trees.configuration import Configuration, is_connected, enumerate_configurations
+from trees.configuration import Configuration, is_connected, enumerate_configurations, find_root
 from trees.transition import is_transition, enumerate_transitions
 from trees.traversal import Traversal
 
@@ -25,24 +25,28 @@ def freeze_signature(signature: Signature) -> FrozenSignature:
                  for config in signature)
 
 
-def _project(vertex: str, traversal: Traversal, tree: Tree) -> Signature:
+def _project(vertex: str, signature: Signature, tree: Tree) -> Signature:
     assert vertex in tree.nodes, f"Vertex {vertex} not in tree."
 
     raw_signature = []
-    for configuration in traversal:
+    for configuration in signature:
         if type(configuration) is str:
+            # if traversal is used as a signature, arrows may change and this should be handled separately
             raw_signature.append(configuration)
         elif configuration.get(vertex, 0) > 0:
             raw_signature.append(configuration)
         elif set(configuration.keys()).issubset(tree.subtree(vertex).nodes):
-            raw_signature.append(DownArrow)
+            configuration_root = find_root(configuration, tree)
+            ancestors = {tree.ancestor(configuration_root, level).identifier
+                         for level in range(tree.depth(vertex)+1, tree.depth(configuration_root))} | {configuration_root}
+            child = ancestors & {child.identifier for child in tree.children(vertex)}
+            raw_signature.append(DownArrow + str(child))
         else:
             raw_signature.append(UpArrow)
     return tuple(raw_signature)
 
 
-def project(vertex: str, traversal: Traversal, tree: Tree) -> Signature:
-    raw_signature = _project(vertex, traversal, tree)
+def condense(raw_signature: Signature) -> Signature:
     # condense signature:
     condensed_signature = []
     previous_config = None
@@ -51,17 +55,19 @@ def project(vertex: str, traversal: Traversal, tree: Tree) -> Signature:
         if formal_config != previous_config:
             condensed_signature.append(formal_config)
             previous_config = formal_config
-
     return tuple(condensed_signature)
 
 
+def project(vertex: str, signature: Signature, tree: Tree) -> Signature:
+    return condense(_project(vertex, signature, tree))
+
+
 def is_signature(signature: Signature, vertex: str, tree: Tree) -> bool:
+    # Verify vertex is in tree
     assert vertex in tree.nodes, f"Vertex {vertex} not in tree."
-
     # Verify that there is a common vertex for all configurations
-    configurations = [config for config in signature if type(config) is Counter]
+    configurations = [config for config in signature if type(config) is not str]
     assert all(vertex in config for config in configurations), f"Vertex {vertex} must be occupied."
-
     # Verify configurations are valid
     assert all([is_connected(config, tree) for config in configurations]), f"Configurations must be connected."
 
@@ -71,26 +77,30 @@ def is_signature(signature: Signature, vertex: str, tree: Tree) -> bool:
     for config1, config2 in zip(configurations, configurations[1:]):
         if type(config1) is Counter and type(config2) is Counter:
             assert is_transition((config1, config2), tree), f"Invalid transitions found."
-
         elif type(config1) is Counter and config2 == UpArrow:
             assert set(config1.keys()) & successors == {vertex}, f"To move up, everyone should be at {vertex} or above."
         elif type(config2) is Counter and config1 == UpArrow:
             assert set(config2.keys()) & successors == {vertex}, f"To move up, everyone should be at {vertex} or above."
-
-        elif type(config1) is Counter and config2 == DownArrow:
+        elif type(config1) is Counter and config2.startswith(DownArrow):
             assert set(config1.keys()) & ancestors == {vertex}, f"To move down, everyone should be at {vertex} or below."
-            assert sum(config1[child] > 0 for child in tree.children(vertex)) <= 1, f"To move down, only one child may be occupied."
-        elif type(config2) is Counter and config1 == DownArrow:
+            assert sum(config1[child.identifier] > 0 for child in tree.children(vertex)) <= 1, f"To move down, only one child may be occupied."
+            for child in tree.children(vertex):
+                if config1[child.identifier] > 0:
+                    assert config2 == DownArrow + str(child.identifier)
+        elif type(config2) is Counter and config1.startswith(DownArrow):
             assert set(config2.keys()) & ancestors == {vertex}, f"To move down, everyone should be at {vertex} or below."
-            assert sum(config2[child] > 0 for child in tree.children(vertex)) <= 1, f"To move down, only one child may be occupied."
-
+            assert sum(config2[child.identifier] > 0 for child in tree.children(vertex)) <= 1, f"To move down, only one child may be occupied."
+            for child in tree.children(vertex):
+                if config2[child.identifier] > 0:
+                    assert config1 == DownArrow + str(child.identifier)
         else:
             assert False, f"Invalid transition: ({config1}, {config2})."
 
     # Verify no transition repeats
     transitions = [(frozendict(config1), frozendict(config2)) for config1, config2 in zip(signature, signature[1:])
                    if type(config1) is Counter and type(config2) is Counter]
-    return len(set(transitions)) == len(transitions)
+    assert len(set(transitions)) == len(transitions)
+    return True
 
 
 def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool) -> Dict[FormalConfiguration, Set[FormalConfiguration]]:
