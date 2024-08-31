@@ -7,7 +7,6 @@ from typing import Tuple, Union, Dict, Set, List
 
 from trees.configuration import Configuration, is_connected, enumerate_configurations, find_root
 from trees.transition import is_transition, enumerate_transitions
-from trees.traversal import Traversal
 
 UpArrow = '↑'
 DownArrow = '↓'
@@ -100,10 +99,12 @@ def is_signature(signature: Signature, vertex: str, tree: Tree) -> bool:
     transitions = [(frozendict(config1), frozendict(config2)) for config1, config2 in zip(signature, signature[1:])
                    if type(config1) is Counter and type(config2) is Counter]
     assert len(set(transitions)) == len(transitions)
+    # TODO: this allows ↑,↓ transitions to repeat, we can avoid that with valid_transitions.
     return True
 
 
-def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool) -> Dict[FormalConfiguration, Set[FormalConfiguration]]:
+def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
+                          ) -> Tuple[Dict[FormalConfiguration, Set[FormalConfiguration]], Dict[FormalTransition, int]]:
     inside_vertex = {v for v in tree.subtree(vertex).nodes}
     outside_vertex = deepcopy(tree)
     outside_vertex.remove_subtree(vertex)
@@ -115,6 +116,9 @@ def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool) -
     # Pre-computation: for each configuration, get list of valid transitions
     valid_transitions = defaultdict(lambda: set())
 
+    # Pre-computation: for each configuration, get the budget for each arrow, that is, how many transitions are available
+    budget = defaultdict(lambda: 0)
+
     for configuration in valid_configurations:
         collected_transitions = enumerate_transitions(configuration, tree)
 
@@ -123,18 +127,34 @@ def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool) -
             if set(second_configuration.keys()).issubset(outside_vertex):
                 valid_transitions[frozendict(configuration)].add(UpArrow)
                 valid_transitions[UpArrow].add(frozendict(configuration))
+
+                budget[(frozendict(configuration), UpArrow)] += 1
             # Handle ↓
             elif set(second_configuration.keys()).issubset(inside_vertex - {vertex}):
-                # If raw, explicitly store raw second_configuration, otherwise store symbolic ↓
-                second_configuration = frozendict(second_configuration) if raw else DownArrow
+                second_config_root = find_root(second_configuration, tree)
+                # If raw, explicitly store raw second_configuration, otherwise store symbolic ↓ || child_id
+                second_configuration = frozendict(second_configuration) if raw else DownArrow + str(second_config_root)
                 valid_transitions[frozendict(configuration)].add(frozendict(second_configuration))
                 # Add the other direction as second_configuration won't be enumerated
                 valid_transitions[second_configuration].add(frozendict(configuration))
+
+                budget[(frozendict(configuration), DownArrow + str(second_config_root))] += 1
             else:
                 valid_transitions[frozendict(configuration)].add(frozendict(second_configuration))
                 # The other direction will also be covered when reaching configuration=second_configuration
+        if raw:
+            # Account for the that it's possible to get back from a different ↓ || child_id configuration,
+            # potentially to a different configuration.
+            down_configs_dict = defaultdict(lambda: set())
+            down_configs = [second_configuration for second_configuration in enumerate_transitions(configuration, tree)
+                            if set(second_configuration.keys()).issubset(inside_vertex - {vertex})]
+            for down_config in down_configs:
+                down_configs_dict[find_root(down_config, tree)].add(down_config)
+            for down_config in down_configs:
+                for config in down_configs_dict[find_root(down_config, tree)]:
+                    valid_transitions[frozendict(down_config)].update(valid_transitions[frozendict(config)])
 
-    return valid_transitions
+    return valid_transitions, budget
 
 
 def enumerate_signatures(vertex: str, tree: Tree, num_robots: int, raw: bool) -> List[Signature]:
@@ -143,10 +163,22 @@ def enumerate_signatures(vertex: str, tree: Tree, num_robots: int, raw: bool) ->
     #                                                     + {'↓'} (raw=False)
     #  2. E = an edge exists iff it is a valid transition
     # G is represented with an adjacency list valid_transitions:
-    valid_transitions = signatures_precompute(vertex, tree, num_robots, raw=raw)
+    valid_transitions, budget = signatures_precompute(vertex, tree, num_robots, raw=raw)
 
     collected_signatures = []
     start_config = frozendict(Counter({vertex: num_robots})) if vertex == tree.root else UpArrow
+
+    def update_used_transitions(current_signature: Signature, next_config: FormalConfiguration,
+                                used_transitions: Dict[FormalConfiguration, Set[FormalConfiguration]]):
+        if type(current_signature[-1]) is not str and type(next_config) is not str:
+            used_transitions[current_signature[-1]].add(next_config)
+        transition = (current_signature[-1], next_config)
+        consumed_budget = sum(config1 == transition[0] and config2 == transition[1] for config1, config2 in zip(current_signature, current_signature[1:]))
+        if type(current_signature[-1]) is str:
+            transition = (transition[0], transition[1])
+        if consumed_budget + 1 == budget[transition]:
+            used_transitions[current_signature[-1]].add(next_config)
+        return used_transitions
 
     # We need to enumerate all possible paths in G that don't repeat an edge.
     # This corresponds to signatures where a transition does not repeat.
@@ -156,14 +188,14 @@ def enumerate_signatures(vertex: str, tree: Tree, num_robots: int, raw: bool) ->
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
             return
-
-        if any(type(config) is not str for config in current_signature if type(config) is not str):
+        if any(type(config) is not str for config in current_signature):
+            # Add signature only if it visits vertex
             collected_signatures.append(current_signature)
         for next_config in valid_transitions[current_signature[-1]] - used_transitions[current_signature[-1]]:
             # Check if transition was used
             if next_config in used_transitions[current_signature[-1]]:
                 continue
-            used_transitions[current_signature[-1]].add(next_config)
+            used_transitions = update_used_transitions(tuple(current_signature), next_config, used_transitions)
             next_signature = current_signature+[next_config]
             dfs_scan_signatures(next_signature, deepcopy(used_transitions))
 
