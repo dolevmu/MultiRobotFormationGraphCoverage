@@ -116,7 +116,7 @@ def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
     # Pre-computation: for each configuration, get list of valid transitions
     valid_transitions = defaultdict(lambda: set())
 
-    # Pre-computation: for each configuration, get the budget for each arrow, that is, how many transitions are available
+    # Pre-computation: for each configuration, get the budget for each arrow: how many such transitions are available
     budget = defaultdict(lambda: 0)
 
     for configuration in valid_configurations:

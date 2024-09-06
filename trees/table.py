@@ -27,10 +27,11 @@ def compute_table(vertex: str, tree: Tree, num_robots: int) -> Table:
 
     # Enumerate signatures at vertex:
     for signature in enumerate_signatures(vertex, tree, num_robots, raw=False):
-        if signature == [frozendict({'': 2}),
-                         DownArrow + '0',
-                         frozendict({'': 2}),
-                         DownArrow + '1']:
+        if signature == [UpArrow,
+                         frozendict({'0': 2}),
+                         DownArrow + '00',
+                         frozendict({'0': 2}),
+                         DownArrow + '01']:
             print(signature)
 
         matched_keys = True
