@@ -27,13 +27,6 @@ def compute_table(vertex: str, tree: Tree, num_robots: int) -> Table:
 
     # Enumerate signatures at vertex:
     for signature in enumerate_signatures(vertex, tree, num_robots, raw=False):
-        if signature == [UpArrow,
-                         frozendict({'0': 2}),
-                         DownArrow + '00',
-                         frozendict({'0': 2}),
-                         DownArrow + '01']:
-            print(signature)
-
         matched_keys = True
         cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
         child_signatures = {}

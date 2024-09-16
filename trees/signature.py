@@ -38,8 +38,9 @@ def _project(vertex: str, signature: Signature, tree: Tree) -> Signature:
             configuration_root = find_root(configuration, tree)
             ancestors = {tree.ancestor(configuration_root, level).identifier
                          for level in range(tree.depth(vertex)+1, tree.depth(configuration_root))} | {configuration_root}
-            child = ancestors & {child.identifier for child in tree.children(vertex)}
-            raw_signature.append(DownArrow + str(child))
+            child = list(ancestors & {child.identifier for child in tree.children(vertex)})
+            assert len(child) == 1
+            raw_signature.append(DownArrow + child[0])
         else:
             raw_signature.append(UpArrow)
     return tuple(raw_signature)
@@ -59,6 +60,24 @@ def condense(raw_signature: Signature) -> Signature:
 
 def project(vertex: str, signature: Signature, tree: Tree) -> Signature:
     return condense(_project(vertex, signature, tree))
+
+
+def child_key(vertex: str, child: str, signature: Signature, tree: Tree) -> Signature:
+    assert any(child == v.identifier for v in tree.children(vertex)), f"{child} is not a child of {vertex} in tree."
+
+    # Handle the down arrows
+    sig = []
+    for config in signature:
+        if type(config) is str:
+            if config in [UpArrow, DownArrow + child]:
+                sig.append(config)
+            else:
+                # A brother is upper to child
+                sig.append(UpArrow)
+        else:
+            sig.append(deepcopy(config))
+
+    return project(child, tuple(sig), tree)
 
 
 def is_signature(signature: Signature, vertex: str, tree: Tree) -> bool:
