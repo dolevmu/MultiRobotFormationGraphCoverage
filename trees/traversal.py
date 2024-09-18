@@ -22,3 +22,8 @@ def is_traversal(traversal: Traversal, tree: Tree) -> bool:
         return False  # tree is not covered
     return True
 
+
+def print_traversal(traversal: Traversal, chunk_size=4):
+    for t in range(0, len(traversal), chunk_size):
+        chunk = traversal[t:t + chunk_size]
+        print(chunk)
