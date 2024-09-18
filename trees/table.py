@@ -1,11 +1,10 @@
 from collections import defaultdict, Counter
 from tqdm import tqdm
 
-from frozendict import frozendict
 from treelib import Tree
 from typing import Dict, NamedTuple
 
-from trees.configuration import enumerate_configurations, find_root
+from trees.configuration import find_root
 from trees.signature import Signature, project, enumerate_signatures, UpArrow, freeze_signature, DownArrow, \
     get_child_key, _project
 from trees.traversal import Traversal, is_traversal
