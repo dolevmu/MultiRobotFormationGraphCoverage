@@ -212,9 +212,6 @@ def enumerate_signatures(vertex: str, tree: Tree, num_robots: int, raw: bool) ->
             # Add signature only if it visits vertex
             collected_signatures.append(current_signature)
         for next_config in valid_transitions[current_signature[-1]] - used_transitions[current_signature[-1]]:
-            # Check if transition was used
-            if next_config in used_transitions[current_signature[-1]]:
-                continue
             used_transitions = update_used_transitions(tuple(current_signature), next_config, used_transitions)
             next_signature = current_signature+[next_config]
             dfs_scan_signatures(next_signature, deepcopy(used_transitions))

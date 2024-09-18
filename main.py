@@ -4,7 +4,7 @@ from collections import Counter
 
 from trees.configuration import enumerate_configurations, is_connected
 from trees.signature import project, is_signature, enumerate_signatures
-from trees.table import compute_table, fpt_compute_traversal_time
+from trees.table import compute_table, fpt_compute_traversal_time, fpt_compute_traversal
 from trees.transition import enumerate_transitions
 from trees.traversal import is_traversal
 from trees.tree import example_tree, print_tree
@@ -47,6 +47,9 @@ if __name__ == '__main__':
     # for entry in table.values():
     #     print(entry.signature)
     start = time()
-    print(fpt_compute_traversal_time(tree, 3))
+    traversal = fpt_compute_traversal(tree, 2)
     end = time()
+
+    print(f"Traversal Time={len(traversal)}")
     print(f"Computation Time={end-start:.2f}")
+    print(traversal)
