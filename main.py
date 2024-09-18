@@ -9,6 +9,8 @@ from trees.transition import enumerate_transitions
 from trees.traversal import is_traversal
 from trees.tree import example_tree, print_tree
 
+from time import time
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     tree = example_tree()
@@ -36,13 +38,15 @@ if __name__ == '__main__':
     #                         for vertex in tree.nodes)
     # print(f"Signatures are {verify_signatures}.")
     #
-    collected_signatures = enumerate_signatures("", tree, 2, raw=False)
-    print(len(collected_signatures))
-    print(collected_signatures[13])
-
-    table = compute_table("0", tree, 2)
-    print(len(table))
+    # collected_signatures = enumerate_signatures("", tree, 2, raw=False)
+    # print(len(collected_signatures))
+    # print(collected_signatures[13])
+    #
+    # table = compute_table("0", tree, 2)
+    # print(len(table))
     # for entry in table.values():
     #     print(entry.signature)
-
-    # print(fpt_compute_traversal_time(tree, 2))
+    start = time()
+    print(fpt_compute_traversal_time(tree, 2))
+    end = time()
+    print(f"Time={end-start}")

@@ -5,7 +5,7 @@ from treelib import Tree
 from typing import Dict, NamedTuple
 
 from trees.configuration import enumerate_configurations, find_root
-from trees.signature import Signature, project, enumerate_signatures, UpArrow, freeze_signature, DownArrow
+from trees.signature import Signature, project, enumerate_signatures, UpArrow, freeze_signature, DownArrow, get_child_key
 from trees.traversal import Traversal, is_traversal
 
 
@@ -27,12 +27,19 @@ def compute_table(vertex: str, tree: Tree, num_robots: int) -> Table:
 
     # Enumerate signatures at vertex:
     for signature in enumerate_signatures(vertex, tree, num_robots, raw=False):
+        if vertex == tree.root:
+            print('here')
+        if signature == [frozendict({'': 2}),
+                         DownArrow + '0',
+                         frozendict({'': 2}),
+                         DownArrow + '1']:
+            print('here')
         matched_keys = True
         cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
         child_signatures = {}
 
         for child in tree.children(vertex):
-            child_key = freeze_signature(project(child.identifier, signature, tree))
+            child_key = freeze_signature(get_child_key(vertex, child.identifier, signature, tree))
             if not child_key in children_tables[child.identifier]:
                 matched_keys = False
                 break

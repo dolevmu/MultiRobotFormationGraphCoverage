@@ -62,7 +62,7 @@ def project(vertex: str, signature: Signature, tree: Tree) -> Signature:
     return condense(_project(vertex, signature, tree))
 
 
-def child_key(vertex: str, child: str, signature: Signature, tree: Tree) -> Signature:
+def get_child_key(vertex: str, child: str, signature: Signature, tree: Tree) -> Signature:
     assert any(child == v.identifier for v in tree.children(vertex)), f"{child} is not a child of {vertex} in tree."
 
     # Handle the down arrows
