@@ -47,6 +47,6 @@ if __name__ == '__main__':
     # for entry in table.values():
     #     print(entry.signature)
     start = time()
-    print(fpt_compute_traversal_time(tree, 2))
+    print(fpt_compute_traversal_time(tree, 3))
     end = time()
-    print(f"Time={end-start}")
+    print(f"Computation Time={end-start:.2f}")

@@ -1,4 +1,5 @@
 from collections import defaultdict, Counter
+from tqdm import tqdm
 
 from frozendict import frozendict
 from treelib import Tree
@@ -26,14 +27,9 @@ def compute_table(vertex: str, tree: Tree, num_robots: int) -> Table:
     children_tables = {child.identifier: compute_table(child.identifier, tree, num_robots) for child in tree.children(vertex)}
 
     # Enumerate signatures at vertex:
-    for signature in enumerate_signatures(vertex, tree, num_robots, raw=False):
-        if vertex == tree.root:
-            print('here')
-        if signature == [frozendict({'': 2}),
-                         DownArrow + '0',
-                         frozendict({'': 2}),
-                         DownArrow + '1']:
-            print('here')
+    signatures_at_vertex = enumerate_signatures(vertex, tree, num_robots, raw=False)
+    num_signatures_at_vertex = len(signatures_at_vertex)
+    for signature in tqdm(signatures_at_vertex, total=num_signatures_at_vertex, desc=f"Vertex={vertex: >4}"):
         matched_keys = True
         cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
         child_signatures = {}

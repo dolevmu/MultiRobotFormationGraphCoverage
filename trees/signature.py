@@ -52,6 +52,9 @@ def condense(raw_signature: Signature) -> Signature:
     previous_config = None
 
     for formal_config in raw_signature:
+        if type(formal_config) is str and type(previous_config) is str:
+            if formal_config[0] == DownArrow and previous_config[0] == DownArrow:
+                continue
         if formal_config != previous_config:
             condensed_signature.append(formal_config)
             previous_config = formal_config
