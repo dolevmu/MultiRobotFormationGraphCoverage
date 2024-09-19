@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from frozendict import frozendict
 from treelib import Tree
-from typing import Tuple, Union, Dict, Set, List
+from typing import Tuple, Union, Dict, Set, List, Optional
 
 from trees.configuration import Configuration, is_connected, enumerate_configurations, find_root
 from trees.transition import is_transition, enumerate_transitions
@@ -179,13 +179,25 @@ def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
     return valid_transitions, budget
 
 
-def enumerate_signatures(vertex: str, tree: Tree, num_robots: int, raw: bool) -> List[Signature]:
-    #  Let G=(V,E) be the following graph:
-    #  1. V = {Configurations that occupy vertex} + {'↑'} + {Configurations projected to '↓'} (raw=True)
-    #                                                     + {'↓'} (raw=False)
-    #  2. E = an edge exists iff it is a valid transition
+def enumerate_signatures(vertex: str,
+                         tree: Tree,
+                         num_robots: int,
+                         raw: bool,
+                         down_capacities: Optional[Dict[str, int]] = None) -> List[Signature]:
+    # Let G=(V,E) be the following graph:
+    # 1. V = {Configurations that occupy vertex} + {'↑'} + {Configurations projected to '↓'} (raw=True)
+    #                                                    + {'↓'} (raw=False)
+    # 2. E = an edge exists iff it is a valid transition
     # G is represented with an adjacency list valid_transitions:
     valid_transitions, budget = signatures_precompute(vertex, tree, num_robots, raw=raw)
+
+    # down_capacity[vertex] specifies the maximal number of down arrows per child, overall.
+    # E.g., due to collapsability, if child is a leaf in tree, down_capacity[child]=1, and there is only one transition
+    # to this child.
+    if down_capacities is None:
+        down_capacities = dict()
+        for child in tree.children(vertex):
+            down_capacities[child.identifier] = len(valid_transitions[DownArrow + child.identifier])
 
     collected_signatures = []
     start_config = frozendict(Counter({vertex: num_robots})) if vertex == tree.root else UpArrow
@@ -200,22 +212,49 @@ def enumerate_signatures(vertex: str, tree: Tree, num_robots: int, raw: bool) ->
             used_transitions[current_signature[-1]].add(next_config)
         return used_transitions
 
+    def update_down_capacities(next_config: FormalConfiguration,
+                               used_transitions: Dict[FormalConfiguration, Set[FormalConfiguration]],
+                               down_capacities: Dict[str, int]):
+        if type(next_config) is not str or next_config == UpArrow:
+            return used_transitions, down_capacities
+        down_capacities[next_config[1:]] -= 1
+        if down_capacities[next_config[1:]] == 0:
+            # Update used_transitions
+            for second_config in valid_transitions[next_config]:
+                # Delete all transitions down to this child
+                used_transitions[second_config].add(next_config)
+        return used_transitions, down_capacities
+
     # We need to enumerate all possible paths in G that don't repeat an edge.
     # This corresponds to signatures where a transition does not repeat.
     def dfs_scan_signatures(current_signature: List[FormalConfiguration],
-                            used_transitions: Dict[FormalConfiguration, Set[FormalConfiguration]]):
+                            used_transitions: Dict[FormalConfiguration, Set[FormalConfiguration]],
+                            down_capacities: Dict[str, int]):
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
+            return
+        if tree.size() < len(current_signature):  # This bound works for k > 1
+            # No need to look at sequences longer than the upper bound on time to cover the tree
+            # TODO: should be a parameter, find heuristically an upper bound on traversal time and use it instead
+            return
+        # Heuristic, but probably can be checked a-posteriori
+        if tree.size() // 3 < len([config for config in current_signature if type(config) is not str]):
+
+            # No need to look at sequences longer than the upper bound on time to cover the tree
+            # TODO: should be a parameter, find heuristically an upper bound on traversal time and use it instead
             return
         if any(type(config) is not str for config in current_signature):
             # Add signature only if it visits vertex
             collected_signatures.append(current_signature)
         for next_config in valid_transitions[current_signature[-1]] - used_transitions[current_signature[-1]]:
             used_transitions = update_used_transitions(tuple(current_signature), next_config, used_transitions)
+            used_transitions, down_capacities = update_down_capacities(next_config, used_transitions, down_capacities)
             next_signature = current_signature+[next_config]
-            dfs_scan_signatures(next_signature, deepcopy(used_transitions))
+            dfs_scan_signatures(next_signature, deepcopy(used_transitions), deepcopy(down_capacities))
 
-    dfs_scan_signatures([start_config], used_transitions=defaultdict(lambda: set()))
+    dfs_scan_signatures([start_config],
+                        used_transitions=defaultdict(lambda: set()),
+                        down_capacities=down_capacities)
     return collected_signatures
 

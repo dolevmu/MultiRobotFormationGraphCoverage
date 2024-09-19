@@ -2,7 +2,7 @@ from collections import defaultdict, Counter
 from tqdm import tqdm
 
 from treelib import Tree
-from typing import Dict, NamedTuple
+from typing import Dict, NamedTuple, Optional
 
 from trees.configuration import find_root
 from trees.signature import Signature, project, enumerate_signatures, UpArrow, freeze_signature, DownArrow, \
@@ -20,15 +20,24 @@ class TableEntry(NamedTuple):
 Table = Dict[Signature, TableEntry]
 
 
+def get_down_capacity(table: Table) -> int:
+    max_capacity = 0
+    for entry in table.values():
+        capacity = entry.signature.count(UpArrow) - (entry.signature[-1] == UpArrow)
+        if capacity > max_capacity:
+            max_capacity = capacity
+    return max_capacity
+
+
 def compute_table(vertex: str, tree: Tree, num_robots: int) -> Table:
     parent = vertex if vertex == tree.root else tree.parent(vertex).identifier
     table = defaultdict(lambda: TableEntry(vertex=vertex, signature=(), child_signatures={}, cost=2*tree.size()))
 
     # Recursively Compute tables of children.
     children_tables = {child.identifier: compute_table(child.identifier, tree, num_robots) for child in tree.children(vertex)}
-
+    down_capacities = {child: get_down_capacity(table) for child, table in children_tables.items()}
     # Enumerate signatures at vertex:
-    signatures_at_vertex = enumerate_signatures(vertex, tree, num_robots, raw=False)
+    signatures_at_vertex = enumerate_signatures(vertex, tree, num_robots, raw=False, down_capacities=down_capacities)
     num_signatures_at_vertex = len(signatures_at_vertex)
     for signature in tqdm(signatures_at_vertex, total=num_signatures_at_vertex, desc=f"Vertex={vertex: >4}"):
         matched_keys = True
@@ -99,7 +108,7 @@ def fpt_compute_traversal_time(tree: Tree, num_robots: int) -> Traversal:
     return traversal_time
 
 
-def fpt_compute_traversal(tree: Tree, num_robots: int) -> Traversal:
+def fpt_compute_traversal(tree: Tree, num_robots: int) -> Optional[Traversal]:
     table = compute_table(tree.root, tree, num_robots)
     # Find traversal with minimal cost
     root_table_entry = None
@@ -108,6 +117,9 @@ def fpt_compute_traversal(tree: Tree, num_robots: int) -> Traversal:
         if table_entry.cost < traversal_time:
             traversal_time = table_entry.cost
             root_table_entry = table_entry
+
+    if root_table_entry is None:
+        return None
 
     # Reconstruct traversal from root_signature
     traversal = reconstruct(root_table_entry, tree)
