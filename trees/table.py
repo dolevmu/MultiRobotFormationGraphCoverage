@@ -1,4 +1,6 @@
 from collections import defaultdict, Counter
+
+from frozendict import frozendict
 from tqdm import tqdm
 
 from treelib import Tree

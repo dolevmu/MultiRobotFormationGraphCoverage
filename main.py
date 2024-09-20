@@ -2,8 +2,7 @@
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 from trees.table import fpt_compute_traversal
 from trees.traversal import print_traversal
-from trees.tree import example_tree, print_tree
-import numpy as np
+from trees.tree import hard_example_tree, example_tree, print_tree
 
 from time import time
 

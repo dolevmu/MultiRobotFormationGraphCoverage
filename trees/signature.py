@@ -234,24 +234,53 @@ def enumerate_signatures(vertex: str,
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
             return
-        if tree.size() < len(current_signature):  # This bound works for k > 1
+        if tree.size() < len(current_signature):
             # No need to look at sequences longer than the upper bound on time to cover the tree
-            # TODO: should be a parameter, find heuristically an upper bound on traversal time and use it instead
             return
-        # Heuristic, but probably can be checked a-posteriori
-        if tree.size() // 3 < len([config for config in current_signature if type(config) is not str]):
 
+        num_neighbors = len(tree.children(vertex)) + 1 + (vertex != tree.root)
+        # Heuristic
+        max_sig_length = 4
+        if current_signature == [UpArrow,
+                                 frozendict({'0': 3}),
+                                 frozendict({'0': 1, '00': 1, '01': 1}),
+                                 frozendict({'0': 3})]:
+            print('here')
+        if current_signature == [UpArrow,
+                                 frozendict({'0': 3}),
+                                 frozendict({'0': 1, '00': 1, '01': 1}),
+                                 frozendict({'0': 3}),
+                                 UpArrow]:
+            print('here')
+        # if current_signature == [frozendict({'': 3}),
+        #                          DownArrow + '0',
+        #                          frozendict({'': 3}),
+        #                          DownArrow + '1']:
+        #     print('here')
+
+        if max_sig_length < len([config for config in current_signature if type(config) is not str]):
             # No need to look at sequences longer than the upper bound on time to cover the tree
             # TODO: should be a parameter, find heuristically an upper bound on traversal time and use it instead
             return
         if any(type(config) is not str for config in current_signature):
             # Add signature only if it visits vertex
             collected_signatures.append(current_signature)
-        for next_config in valid_transitions[current_signature[-1]] - used_transitions[current_signature[-1]]:
-            used_transitions = update_used_transitions(tuple(current_signature), next_config, used_transitions)
-            used_transitions, down_capacities = update_down_capacities(next_config, used_transitions, down_capacities)
-            next_signature = current_signature+[next_config]
-            dfs_scan_signatures(next_signature, deepcopy(used_transitions), deepcopy(down_capacities))
+        next_configs = valid_transitions[current_signature[-1]] - used_transitions[current_signature[-1]]
+        for next_config in next_configs:
+            if current_signature == [UpArrow,
+                                     frozendict({'0': 3}),
+                                     frozendict({'0': 1, '00': 1, '01': 1}),
+                                     frozendict({'0': 3})]:
+                check = UpArrow in valid_transitions[current_signature[-1]] - used_transitions[current_signature[-1]]
+                print(check)
+                if next_config == UpArrow:
+                    print('here')
+
+            next_used_transitions = update_used_transitions(tuple(current_signature), next_config, deepcopy(used_transitions))
+            next_used_transitions, next_down_capacities = update_down_capacities(next_config, next_used_transitions, deepcopy(down_capacities))
+            next_signature = deepcopy(current_signature)+[next_config]
+            dfs_scan_signatures(next_signature, next_used_transitions, next_down_capacities)
+            continue
 
     dfs_scan_signatures([start_config],
                         used_transitions=defaultdict(lambda: set()),
