@@ -1,9 +1,11 @@
 from collections import Counter, defaultdict
 from copy import deepcopy
+from enum import Enum
+from itertools import product as prod
 
 from frozendict import frozendict
 from treelib import Tree
-from typing import Tuple, Union, Dict, Set, List, Optional
+from typing import Tuple, Union, Dict, Set, List, Optional, NamedTuple
 
 from trees.configuration import Configuration, is_connected, enumerate_configurations, find_root
 from trees.transition import is_transition, enumerate_transitions
@@ -183,7 +185,8 @@ def enumerate_signatures(vertex: str,
                          tree: Tree,
                          num_robots: int,
                          raw: bool,
-                         down_capacities: Optional[Dict[str, int]] = None) -> List[Signature]:
+                         down_capacities: Optional[Dict[str, int]] = None,
+                         max_sig_length: Optional[int] = None) -> List[Signature]:
     # Let G=(V,E) be the following graph:
     # 1. V = {Configurations that occupy vertex} + {'↑'} + {Configurations projected to '↓'} (raw=True)
     #                                                    + {'↓'} (raw=False)
@@ -201,6 +204,12 @@ def enumerate_signatures(vertex: str,
 
     collected_signatures = []
     start_config = frozendict(Counter({vertex: num_robots})) if vertex == tree.root else UpArrow
+
+    if max_sig_length is None:
+        max_sig_length = tree.size()
+
+    # Heuristic
+    max_sig_length = 4
 
     def update_used_transitions(current_signature: Signature, next_config: FormalConfiguration,
                                 used_transitions: Dict[FormalConfiguration, Set[FormalConfiguration]]):
@@ -229,21 +238,15 @@ def enumerate_signatures(vertex: str,
     # This corresponds to signatures where a transition does not repeat.
     def dfs_scan_signatures(current_signature: List[FormalConfiguration],
                             used_transitions: Dict[FormalConfiguration, Set[FormalConfiguration]],
-                            down_capacities: Dict[str, int]):
+                            down_capacities: Dict[str, int],
+                            max_sig_length: int):
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
             return
-        if tree.size() < len(current_signature):
-            # No need to look at sequences longer than the upper bound on time to cover the tree
-            return
-
-        num_neighbors = len(tree.children(vertex)) + 1 + (vertex != tree.root)
-        # Heuristic
-        max_sig_length = 4
         if max_sig_length < len([config for config in current_signature if type(config) is not str]):
-            # No need to look at sequences longer than the upper bound on time to cover the tree
-            # TODO: should be a parameter, find heuristically an upper bound on traversal time and use it instead
+            # No need to look at signatures longer than the upper bound
+            # A tight bound for k=2 is tree.size(): consider a star graph
             return
         if any(type(config) is not str for config in current_signature):
             # Add signature only if it visits vertex
@@ -253,11 +256,12 @@ def enumerate_signatures(vertex: str,
             next_used_transitions = update_used_transitions(tuple(current_signature), next_config, deepcopy(used_transitions))
             next_used_transitions, next_down_capacities = update_down_capacities(next_config, next_used_transitions, deepcopy(down_capacities))
             next_signature = deepcopy(current_signature)+[next_config]
-            dfs_scan_signatures(next_signature, next_used_transitions, next_down_capacities)
+            dfs_scan_signatures(next_signature, next_used_transitions, next_down_capacities, max_sig_length)
             continue
 
     dfs_scan_signatures([start_config],
                         used_transitions=defaultdict(lambda: set()),
-                        down_capacities=down_capacities)
+                        down_capacities=down_capacities,
+                        max_sig_length=max_sig_length)
     return collected_signatures
 
