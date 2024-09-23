@@ -8,7 +8,7 @@ from time import time
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    tree = hard_example_tree()
+    tree = example_tree()
     print_tree(tree)
 
     start = time()
