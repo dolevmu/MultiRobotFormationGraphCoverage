@@ -2,10 +2,19 @@ from copy import deepcopy
 from collections import Counter
 from itertools import combinations, product
 import numpy as np
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Union
+
+from frozendict import frozendict
 from treelib import Tree
 
 Configuration = Counter[str, int]  # Maps vertex id to number of occupying robots
+
+UpArrow = '↑'
+DownArrow = '↓'
+ArrowSymbol = str
+FormalConfiguration = Union[Configuration, ArrowSymbol]
+FrozenFormalConfiguration = Union[frozendict, ArrowSymbol]
+FormalTransition = Tuple[FormalConfiguration, FormalConfiguration]
 
 def find_root(configuration: Configuration, tree: Tree) -> Optional[str]:
     # Find the root node of the configuration

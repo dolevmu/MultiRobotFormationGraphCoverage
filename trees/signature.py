@@ -1,21 +1,14 @@
 from collections import Counter, defaultdict
 from copy import deepcopy
-from enum import Enum
-from itertools import product as prod
+from functools import reduce
 
 from frozendict import frozendict
 from treelib import Tree
-from typing import Tuple, Union, Dict, Set, List, Optional, NamedTuple
+from typing import Tuple, Dict, Set, List, Optional
 
-from trees.configuration import Configuration, is_connected, enumerate_configurations, find_root
-from trees.transition import is_transition, enumerate_transitions
-
-UpArrow = '↑'
-DownArrow = '↓'
-ArrowSymbol = str
-FormalConfiguration = Union[Configuration, ArrowSymbol]
-FrozenFormalConfiguration = Union[frozendict, ArrowSymbol]
-FormalTransition = Tuple[FormalConfiguration, FormalConfiguration]
+from trees.configuration import is_connected, enumerate_configurations, find_root, UpArrow, DownArrow, \
+    FormalConfiguration, FrozenFormalConfiguration, FormalTransition
+from trees.transition import is_transition, enumerate_transitions, is_up_transition
 
 Signature = Tuple[FormalConfiguration, ...]
 FrozenSignature = Tuple[FrozenFormalConfiguration, ...]
@@ -127,6 +120,10 @@ def is_signature(signature: Signature, vertex: str, tree: Tree) -> bool:
     return True
 
 
+def compute_signature_cost(vertex: str, signature: Signature, tree: Tree) -> int:
+    return sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
+
+
 def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
                           ) -> Tuple[Dict[FormalConfiguration, Set[FormalConfiguration]], Dict[FormalTransition, int]]:
     inside_vertex = {v for v in tree.subtree(vertex).nodes}
@@ -208,7 +205,6 @@ def enumerate_signatures(vertex: str,
     if max_sig_length is None:
         max_sig_length = tree.size()
 
-    # Heuristic
     max_sig_length = 4
 
     def update_used_transitions(current_signature: Signature, next_config: FormalConfiguration,
@@ -240,6 +236,17 @@ def enumerate_signatures(vertex: str,
                             used_transitions: Dict[FormalConfiguration, Set[FormalConfiguration]],
                             down_capacities: Dict[str, int],
                             max_sig_length: int):
+        if current_signature == [UpArrow,
+                                 frozendict({'0': 3}),
+                                 frozendict({'0': 1, '00': 1, '01': 1}),
+                                 frozendict({'0': 1, '01': 1, '010': 1}),
+                                 DownArrow + '01',
+                                 frozendict({'0': 1, '01': 1, '011': 1}),
+                                 frozendict({'': 1, '0': 1, '01': 1}),
+                                 frozendict({'': 1, '0': 1, '2': 1}),
+                                 UpArrow]:
+            print('here')
+
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
@@ -248,10 +255,34 @@ def enumerate_signatures(vertex: str,
             # No need to look at signatures longer than the upper bound
             # A tight bound for k=2 is tree.size(): consider a star graph
             return
+
         if any(type(config) is not str for config in current_signature):
             # Add signature only if it visits vertex
             collected_signatures.append(current_signature)
+
+            # Heuristic: only get out once
+            if current_signature.count(UpArrow) == 2:
+                return
+
         next_configs = valid_transitions[current_signature[-1]] - used_transitions[current_signature[-1]]
+
+        covered = set(reduce(set.union, [config.keys() for config in current_signature if type(config) is not str], set()))
+        if all(
+                DownArrow + child.identifier in current_signature
+                or set(tree.subtree(child.identifier).nodes.keys()).issubset(covered)
+                for child in tree.children(vertex)):
+            # Heuristic: if search all children, only go up
+            next_configs = [config for config in next_configs
+                            if is_up_transition(vertex, (current_signature[-1], config), tree, valid_transitions[current_signature[-1]])]
+        else:
+            # Heuristic: if didn't search all children, must cover a new node
+            covered = covered | {config for config in current_signature if type(config) is str}
+            next_configs = [config for config in next_configs
+                            if type(config) is not str and set(config.keys()).issubset(covered)]
+            next_configs = [config for config in next_configs
+                            if type(config) is str and config in covered] + next_configs
+
+
         for next_config in next_configs:
             next_used_transitions = update_used_transitions(tuple(current_signature), next_config, deepcopy(used_transitions))
             next_used_transitions, next_down_capacities = update_down_capacities(next_config, next_used_transitions, deepcopy(down_capacities))

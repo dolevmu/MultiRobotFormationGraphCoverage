@@ -2,13 +2,14 @@ from collections import Counter
 from frozendict import frozendict
 from itertools import combinations, product
 import numpy as np
-from typing import Tuple, List
+from typing import Tuple, List, Set
 
 from pulp import PULP_CBC_CMD
 from treelib import Tree
 import pulp
 
-from trees.configuration import Configuration, is_connected, split_configuration, find_root
+from trees.configuration import Configuration, is_connected, split_configuration, find_root, UpArrow, DownArrow, \
+    FormalTransition
 
 Transition = Tuple[Configuration, Configuration]  # A pair of consecutive configurations
 
@@ -50,7 +51,6 @@ def solve_ilp(transition: Transition, tree: Tree) -> bool:
 
     return status in ['Optimal', 'Integer Feasible']
 
-
 def is_transition(transition: Transition, tree: Tree) -> bool:
     assert is_connected(transition[0], tree), f"Current configuration {transition[0]} is invalid."
     assert is_connected(transition[1], tree), f"Target configuration {transition[1]} is invalid."
@@ -64,6 +64,25 @@ def is_transition(transition: Transition, tree: Tree) -> bool:
 
     # Setup and solve the ILP
     return solve_ilp(transition, tree)
+
+
+def is_up_transition(vertex: str, transition: FormalTransition, tree: Tree, valid_transitions: Set[Configuration]) -> bool:
+    if transition[0] == UpArrow:
+        return True
+
+    if UpArrow in valid_transitions:
+        return transition[1] == UpArrow
+
+    if type(transition[0]) is str and transition[0].startswith(DownArrow):
+        return True
+
+    # check that we only go up
+    for v in set(transition[0].keys()) & tree.subtree(vertex):
+        expected = sum(transition[0][child.identifier] for child in tree.children(v))
+        if transition[1][v] != expected:
+            return False
+
+    return True
 
 
 def _enumerate_transitions(configuration: Configuration, tree: Tree) -> List[Configuration]:
