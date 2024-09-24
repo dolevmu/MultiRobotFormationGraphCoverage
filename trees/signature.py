@@ -203,7 +203,7 @@ def enumerate_signatures(vertex: str,
     start_config = frozendict(Counter({vertex: num_robots})) if vertex == tree.root else UpArrow
 
     if max_sig_length is None:
-        max_sig_length = tree.size()
+        max_sig_length = tree.size()  # always holds
 
     max_sig_length = 8
 
