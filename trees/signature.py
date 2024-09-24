@@ -205,7 +205,7 @@ def enumerate_signatures(vertex: str,
     if max_sig_length is None:
         max_sig_length = tree.size()
 
-    max_sig_length = 6
+    max_sig_length = 8
 
     def update_used_transitions(current_signature: Signature, next_config: FormalConfiguration,
                                 used_transitions: Dict[FormalConfiguration, Set[FormalConfiguration]]):
@@ -245,7 +245,7 @@ def enumerate_signatures(vertex: str,
                 frozendict({'': 1, '0': 1, '01': 1}),
                 frozendict({'': 1, '0': 1, '2': 1}),
                 UpArrow]
-        if current_signature == sig0[:len(current_signature)] and len(current_signature) >= 7:
+        if current_signature == sig0:
             print('here')
 
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
