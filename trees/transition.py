@@ -73,13 +73,16 @@ def is_up_transition(vertex: str, transition: FormalTransition, tree: Tree, vali
     if UpArrow in valid_transitions:
         return transition[1] == UpArrow
 
+    if type(transition[1]) is str:
+        return False
+
     if type(transition[0]) is str and transition[0].startswith(DownArrow):
         return True
 
     # check that we only go up
-    for v in set(transition[0].keys()) & tree.subtree(vertex):
-        expected = sum(transition[0][child.identifier] for child in tree.children(v))
-        if transition[1][v] != expected:
+    for v in set(transition[0].keys()) & set(tree.subtree(vertex).nodes.keys()):
+        expected = sum(transition[0].get(child.identifier, 0) for child in tree.children(v))
+        if transition[1].get(v, 0) != expected:
             return False
 
     return True

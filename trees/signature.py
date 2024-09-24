@@ -276,12 +276,11 @@ def enumerate_signatures(vertex: str,
                             if is_up_transition(vertex, (current_signature[-1], config), tree, valid_transitions[current_signature[-1]])]
         else:
             # Heuristic: if didn't search all children, must cover a new node
-            covered = covered | {config for config in current_signature if type(config) is str}
+            covered = covered | {config for config in current_signature if type(config) is str} - {UpArrow}
             next_configs = [config for config in next_configs
-                            if type(config) is not str and set(config.keys()).issubset(covered)]
+                            if type(config) is not str and not set(config.keys()).issubset(covered)]
             next_configs = [config for config in next_configs
-                            if type(config) is str and config in covered] + next_configs
-
+                            if type(config) is str and not config in covered] + next_configs
 
         for next_config in next_configs:
             next_used_transitions = update_used_transitions(tuple(current_signature), next_config, deepcopy(used_transitions))
