@@ -236,18 +236,6 @@ def enumerate_signatures(vertex: str,
                             used_transitions: Dict[FormalConfiguration, Set[FormalConfiguration]],
                             down_capacities: Dict[str, int],
                             max_sig_length: int):
-        sig0 = [UpArrow,
-                frozendict({'0': 3}),
-                frozendict({'0': 1, '00': 1, '01': 1}),
-                frozendict({'0': 1, '01': 1, '010': 1}),
-                DownArrow + '01',
-                frozendict({'0': 1, '01': 1, '011': 1}),
-                frozendict({'': 1, '0': 1, '01': 1}),
-                frozendict({'': 1, '0': 1, '2': 1}),
-                UpArrow]
-        if current_signature == sig0:
-            print('here')
-
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.

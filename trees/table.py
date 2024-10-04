@@ -41,37 +41,6 @@ def compute_table(vertex: str, tree: Tree, num_robots: int) -> Table:
     signatures_at_vertex = enumerate_signatures(vertex, tree, num_robots, raw=False, down_capacities=down_capacities)
     num_signatures_at_vertex = len(signatures_at_vertex)
     for signature in tqdm(signatures_at_vertex, total=num_signatures_at_vertex, desc=f"Vertex={vertex: >4}"):
-        if signature == [frozendict({'': 3}),
-                         DownArrow + '0',
-                         frozendict({'': 1, '0': 1, '01': 1}),
-                         frozendict({'': 1, '0': 1, '2': 1}),
-                         frozendict({'': 2, '1': 1})]:
-            print('here')
-
-        if signature == [UpArrow,
-                         frozendict({'0': 3}),
-                         frozendict({'0': 1, '00': 1, '01': 1}),
-                         frozendict({'0': 1, '01': 1, '010': 1}),
-                         DownArrow + '01',
-                         frozendict({'0': 1, '01': 1, '011': 1}),
-                         frozendict({'': 1, '0': 1, '01': 1}),
-                         frozendict({'': 1, '0': 1, '2': 1}),
-                         UpArrow]:
-            print('here')
-
-        if signature == [UpArrow,
-                         frozendict({'0': 1, '00': 1, '01': 1}),
-                         frozendict({'0': 1, '01': 1, '010': 1}),
-                         frozendict({'01': 1, '010': 1, '0100': 1}),
-                         frozendict({'01': 1, '010': 1, '011': 1}),
-                         frozendict({'01': 1, '011': 1, '0110': 1}),
-                         frozendict({'01': 1, '011': 1, '0111': 1}),
-                         frozendict({'01': 1, '011': 1, '0112': 1}),
-                         frozendict({'0': 1, '01': 1, '011': 1}),
-                         frozendict({'': 1, '0': 1, '01': 1}),
-                         UpArrow]:
-            print('here')
-
         matched_keys = True
         cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
         child_signatures = {}
