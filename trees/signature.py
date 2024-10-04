@@ -4,7 +4,7 @@ from functools import reduce
 
 from frozendict import frozendict
 from treelib import Tree
-from typing import Tuple, Dict, Set, List, Optional
+from typing import Tuple, Dict, Set, List, Optional, Iterator
 
 from trees.configuration import is_connected, enumerate_configurations, find_root, UpArrow, DownArrow, \
     FormalConfiguration, FrozenFormalConfiguration, FormalTransition
@@ -183,7 +183,7 @@ def enumerate_signatures(vertex: str,
                          num_robots: int,
                          raw: bool,
                          down_capacities: Optional[Dict[str, int]] = None,
-                         max_sig_length: Optional[int] = None) -> List[Signature]:
+                         max_sig_length: Optional[int] = None) -> Iterator[Signature]:
     # Let G=(V,E) be the following graph:
     # 1. V = {Configurations that occupy vertex} + {'↑'} + {Configurations projected to '↓'} (raw=True)
     #                                                    + {'↓'} (raw=False)
@@ -199,7 +199,6 @@ def enumerate_signatures(vertex: str,
         for child in tree.children(vertex):
             down_capacities[child.identifier] = len(valid_transitions[DownArrow + child.identifier])
 
-    collected_signatures = []
     start_config = frozendict(Counter({vertex: num_robots})) if vertex == tree.root else UpArrow
 
     if max_sig_length is None:
@@ -247,7 +246,7 @@ def enumerate_signatures(vertex: str,
 
         if any(type(config) is not str for config in current_signature):
             # Add signature only if it visits vertex
-            collected_signatures.append(current_signature)
+            yield current_signature
 
             # Heuristic: only get out once
             if current_signature.count(UpArrow) == 2:
@@ -275,12 +274,10 @@ def enumerate_signatures(vertex: str,
             next_used_transitions = update_used_transitions(tuple(current_signature), next_config, deepcopy(used_transitions))
             next_used_transitions, next_down_capacities = update_down_capacities(next_config, next_used_transitions, deepcopy(down_capacities))
             next_signature = deepcopy(current_signature)+[next_config]
-            dfs_scan_signatures(next_signature, next_used_transitions, next_down_capacities, max_sig_length)
-            continue
+            yield from dfs_scan_signatures(next_signature, next_used_transitions, next_down_capacities, max_sig_length)
 
-    dfs_scan_signatures([start_config],
-                        used_transitions=defaultdict(lambda: set()),
-                        down_capacities=down_capacities,
-                        max_sig_length=max_sig_length)
-    return collected_signatures
+    yield from dfs_scan_signatures([start_config],
+                                   used_transitions=defaultdict(lambda: set()),
+                                   down_capacities=down_capacities,
+                                   max_sig_length=max_sig_length)
 

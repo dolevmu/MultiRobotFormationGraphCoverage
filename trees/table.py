@@ -1,5 +1,6 @@
 from collections import defaultdict, Counter
-
+from memory_profiler import profile
+import gc
 from frozendict import frozendict
 from tqdm import tqdm
 
@@ -30,6 +31,7 @@ def get_down_capacity(table: Table) -> int:
     return max_capacity
 
 
+# @profile
 def compute_table(vertex: str, tree: Tree, num_robots: int) -> Table:
     parent = vertex if vertex == tree.root else tree.parent(vertex).identifier
     table = defaultdict(lambda: TableEntry(vertex=vertex, signature=(), child_signatures={}, cost=2*tree.size()))
@@ -38,9 +40,8 @@ def compute_table(vertex: str, tree: Tree, num_robots: int) -> Table:
     children_tables = {child.identifier: compute_table(child.identifier, tree, num_robots) for child in tree.children(vertex)}
     down_capacities = {child: get_down_capacity(table) for child, table in children_tables.items()}
     # Enumerate signatures at vertex:
-    signatures_at_vertex = enumerate_signatures(vertex, tree, num_robots, raw=False, down_capacities=down_capacities)
-    num_signatures_at_vertex = len(signatures_at_vertex)
-    for signature in tqdm(signatures_at_vertex, total=num_signatures_at_vertex, desc=f"Vertex={vertex: >4}"):
+    signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False, down_capacities=down_capacities)
+    for signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
         matched_keys = True
         cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
         child_signatures = {}
@@ -62,6 +63,11 @@ def compute_table(vertex: str, tree: Tree, num_robots: int) -> Table:
             # If found a signature with a smaller key, update table
             table[signature_key] = TableEntry(vertex, signature, child_signatures, cost)
             # TODO: we may have an even better condition: just consider configs before and after '↑' as the key
+
+    # Free memory...
+    for child_table in children_tables.values():
+        del child_table
+        gc.collect()
     return table
 
 

@@ -15,10 +15,10 @@ if __name__ == '__main__':
     tree = jaxsonville_tree()
     print_tree(tree)
 
-    # start = time()
-    # traversal = fpt_compute_traversal(tree, 3)
-    # end = time()
-    #
-    # print(f"Traversal Time={len(traversal)}, Tree Size={tree.size()}")
-    # print(f"Computation Time={end-start:.2f}")
-    # print_traversal(traversal)
+    start = time()
+    traversal = fpt_compute_traversal(tree, 3)
+    end = time()
+
+    print(f"Traversal Time={len(traversal)}, Tree Size={tree.size()}")
+    print(f"Computation Time={end-start:.2f}")
+    print_traversal(traversal)
