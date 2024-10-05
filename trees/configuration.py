@@ -53,6 +53,14 @@ def is_connected(configuration: Configuration, tree: Tree) -> bool:
     return subtree_vertices == set(configuration.keys())
 
 
+# Recursively copy nodes from the parent subtree, excluding the vertex (current child)
+def add_subtree_excluding(tree, current_vertex, exclude_vertex, new_tree):
+    for child in tree.children(current_vertex):
+        if child.identifier != exclude_vertex:
+            new_tree.create_node(child.tag, child.identifier, parent=current_vertex)
+            add_subtree_excluding(tree, child.identifier, exclude_vertex, new_tree)
+
+
 def enumerate_configurations(vertex: str, tree: Tree, num_robots: int) -> List[Configuration]:
     assert vertex in tree.nodes, f"Vertex {vertex} is not in the tree."
 
@@ -60,10 +68,22 @@ def enumerate_configurations(vertex: str, tree: Tree, num_robots: int) -> List[C
         return [Counter({})]
 
     subtrees = [(child.identifier, tree.subtree(child.identifier)) for child in tree.children(vertex)]
-    if tree.parent(vertex):
-        parent_tree = deepcopy(tree)
-        parent_tree.remove_node(vertex)
-        subtrees = [(tree.parent(vertex).identifier, parent_tree)] + subtrees
+
+    # Handle the case where the vertex has a parent
+    parent = tree.parent(vertex)
+    if parent:
+        # parent_tree = deepcopy(tree)
+        # parent_tree.remove_node(vertex)
+        # subtrees = [(tree.parent(vertex).identifier, parent_tree)] + subtrees
+
+        parent_subtree = tree.subtree(parent.identifier)
+        # Create a new subtree for the parent that excludes the current vertex (child)
+        new_parent_subtree = Tree()
+        new_parent_subtree.create_node(parent.tag, parent.identifier)  # Add the root of the parent
+        # Add the rest of the parent subtree, excluding the current vertex (child)
+        add_subtree_excluding(parent_subtree, parent.identifier, vertex, new_parent_subtree)
+
+        subtrees = [(parent.identifier, new_parent_subtree)] + subtrees
 
     # The vertex has itself, its parent (if exists), and its children, at its neighborhood
     num_neighbors = 1 + len(subtrees)
@@ -85,6 +105,8 @@ def enumerate_configurations(vertex: str, tree: Tree, num_robots: int) -> List[C
             for config in option:
                 configuration.update(config)
             collected_configurations.append(configuration)
+
+    del subtrees  # Delete the new parent tree
 
     return collected_configurations
 

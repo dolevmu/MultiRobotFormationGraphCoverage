@@ -35,6 +35,7 @@ def get_down_capacity(table: Table) -> int:
     return max_capacity
 
 
+@profile
 def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = False) -> Table:
     if not backtrack:
         pr = cProfile.Profile()

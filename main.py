@@ -17,9 +17,10 @@ if __name__ == '__main__':
     print_tree(tree)
 
     start = time()
-    traversal = fpt_compute_traversal(tree, 3, backtrack=False)
+    traversal = fpt_compute_traversal(tree, 3, backtrack=True)
     end = time()
 
-    print(f"Traversal Time={len(traversal)}, Tree Size={tree.size()}")
-    print(f"Computation Time={end-start:.2f}")
-    print_traversal(traversal)
+    if traversal:
+        print(f"Traversal Time={len(traversal)}, Tree Size={tree.size()}")
+        print(f"Computation Time={end-start:.2f}")
+        print_traversal(traversal)
