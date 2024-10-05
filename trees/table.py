@@ -1,6 +1,10 @@
-from collections import defaultdict, Counter
 from memory_profiler import profile
 import gc
+import cProfile
+import pstats
+import io
+
+from collections import defaultdict, Counter
 from frozendict import frozendict
 from tqdm import tqdm
 
@@ -31,16 +35,22 @@ def get_down_capacity(table: Table) -> int:
     return max_capacity
 
 
-# @profile
-def compute_table(vertex: str, tree: Tree, num_robots: int) -> Table:
+def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = False) -> Table:
+    if not backtrack:
+        pr = cProfile.Profile()
+        # Start profiling
+        pr.enable()
+
+
     parent = vertex if vertex == tree.root else tree.parent(vertex).identifier
     table = defaultdict(lambda: TableEntry(vertex=vertex, signature=(), child_signatures={}, cost=2*tree.size()))
 
     # Recursively Compute tables of children.
-    children_tables = {child.identifier: compute_table(child.identifier, tree, num_robots) for child in tree.children(vertex)}
+    children_tables = {child.identifier: compute_table(child.identifier, tree, num_robots, backtrack=backtrack) for child in tree.children(vertex)}
     down_capacities = {child: get_down_capacity(table) for child, table in children_tables.items()}
     # Enumerate signatures at vertex:
     signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False, down_capacities=down_capacities)
+
     for signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
         matched_keys = True
         cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
@@ -61,13 +71,30 @@ def compute_table(vertex: str, tree: Tree, num_robots: int) -> Table:
         signature_key = freeze_signature(project(parent, signature, tree))
         if cost < table[signature_key].cost:
             # If found a signature with a smaller key, update table
-            table[signature_key] = TableEntry(vertex, signature, child_signatures, cost)
             # TODO: we may have an even better condition: just consider configs before and after '↑' as the key
+            if backtrack:
+                table[signature_key] = TableEntry(vertex, signature, child_signatures, cost)
+            else:
+                table[signature_key] = TableEntry(vertex, signature, {}, cost)
 
     # Free memory...
     for child_table in children_tables.values():
         del child_table
         gc.collect()
+
+    if not backtrack:
+        # Stop profiling
+        pr.disable()
+
+        # Print profiling stats to a string
+        s = io.StringIO()
+        ps = pstats.Stats(pr, stream=s).sort_stats('cumulative')
+        ps.print_stats(20)  # Print top 20 functions by cumulative time
+
+        # Output the profiling results to console
+        print(f"Profiling results for vertex {vertex}:\n")
+        print(s.getvalue())
+
     return table
 
 
@@ -106,7 +133,8 @@ def reconstruct(table_entry: TableEntry, tree: Tree) -> Traversal:
 
 
 def fpt_compute_traversal_time(tree: Tree, num_robots: int) -> Traversal:
-    table = compute_table(tree.root, tree, num_robots)
+    table = compute_table(tree.root, tree, num_robots, backtrack=False)
+
     # Find traversal with minimal cost
     traversal_time = 2*tree.size()
     for table_entry in table.values():
@@ -115,8 +143,8 @@ def fpt_compute_traversal_time(tree: Tree, num_robots: int) -> Traversal:
     return traversal_time
 
 
-def fpt_compute_traversal(tree: Tree, num_robots: int) -> Optional[Traversal]:
-    table = compute_table(tree.root, tree, num_robots)
+def fpt_compute_traversal(tree: Tree, num_robots: int, backtrack: bool = True) -> Optional[Traversal]:
+    table = compute_table(tree.root, tree, num_robots, backtrack=backtrack)
     # Find traversal with minimal cost
     root_table_entry = None
     traversal_time = 2*tree.size()
@@ -128,10 +156,12 @@ def fpt_compute_traversal(tree: Tree, num_robots: int) -> Optional[Traversal]:
     if root_table_entry is None:
         return None
 
-    # Reconstruct traversal from root_signature
-    traversal = reconstruct(root_table_entry, tree)
-
-    assert is_traversal(traversal, tree)
-    assert all(config.total() == num_robots for config in traversal)
-    assert len(traversal) == root_table_entry.cost
-    return traversal
+    if backtrack:
+        # Reconstruct traversal from root_signature
+        traversal = reconstruct(root_table_entry, tree)
+        assert is_traversal(traversal, tree)
+        assert all(config.total() == num_robots for config in traversal)
+        assert len(traversal) == root_table_entry.cost
+        return traversal
+    else:
+        print(f'Traversal time: {traversal_time}')

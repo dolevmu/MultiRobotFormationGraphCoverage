@@ -1,5 +1,4 @@
 from collections import Counter, defaultdict
-from copy import deepcopy
 from functools import reduce
 
 from frozendict import frozendict
@@ -73,7 +72,7 @@ def get_child_key(vertex: str, child: str, signature: Signature, tree: Tree) -> 
                 # A brother is upper to child
                 sig.append(UpArrow)
         else:
-            sig.append(deepcopy(config))
+            sig.append(config)
 
     return project(child, tuple(sig), tree)
 
@@ -126,10 +125,8 @@ def compute_signature_cost(vertex: str, signature: Signature, tree: Tree) -> int
 
 def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
                           ) -> Tuple[Dict[FormalConfiguration, Set[FormalConfiguration]], Dict[FormalTransition, int]]:
-    inside_vertex = {v for v in tree.subtree(vertex).nodes}
-    outside_vertex = deepcopy(tree)
-    outside_vertex.remove_subtree(vertex)
-    outside_vertex = {v for v in outside_vertex.nodes}
+    inside_vertex = tree.subtree(vertex).nodes.keys()
+    outside_vertex = tree.nodes.keys() - inside_vertex
 
     # Pre-computation: get all configurations that occupy vertex
     valid_configurations = enumerate_configurations(vertex, tree, num_robots)
@@ -271,9 +268,9 @@ def enumerate_signatures(vertex: str,
                             if type(config) is str and not config in covered] + next_real_configs
 
         for next_config in next_configs:
-            next_used_transitions = update_used_transitions(tuple(current_signature), next_config, deepcopy(used_transitions))
-            next_used_transitions, next_down_capacities = update_down_capacities(next_config, next_used_transitions, deepcopy(down_capacities))
-            next_signature = deepcopy(current_signature)+[next_config]
+            next_used_transitions = update_used_transitions(tuple(current_signature), next_config, used_transitions.copy())
+            next_used_transitions, next_down_capacities = update_down_capacities(next_config, next_used_transitions, down_capacities.copy())
+            next_signature = current_signature[:]+[next_config]
             yield from dfs_scan_signatures(next_signature, next_used_transitions, next_down_capacities, max_sig_length)
 
     yield from dfs_scan_signatures([start_config],
