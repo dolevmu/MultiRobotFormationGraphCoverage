@@ -203,34 +203,24 @@ def enumerate_signatures(vertex: str,
 
     max_sig_length = 8
 
-    def update_used_transitions(current_signature: Signature, next_config: FormalConfiguration,
-                                used_transitions: Dict[FormalConfiguration, Set[FormalConfiguration]]):
-        if type(current_signature[-1]) is not str and type(next_config) is not str:
-            used_transitions[current_signature[-1]].add(next_config)
-        transition = (current_signature[-1], next_config)
-        consumed_budget = sum(config1 == transition[0] and config2 == transition[1] for config1, config2 in zip(current_signature, current_signature[1:]))
-        if consumed_budget + 1 == budget[transition] + budget[(transition[1], transition[0])]:
-            used_transitions[current_signature[-1]].add(next_config)
+    def compute_used_transitions(current_signature: Signature) -> Set[FormalConfiguration]:
+        if type(current_signature[-1]) is str:
+            return set()
+        consumed_budget = Counter()
+        used_transitions = set()
+        for i in range(1, len(current_signature)):
+            if current_signature[i-1] == current_signature[-1]:
+                if type(current_signature[i]) is str and current_signature[i][0] == DownArrow:
+                    consumed_budget[current_signature[i]] += 1
+                    if consumed_budget[current_signature[i]] == down_capacities[current_signature[i][1:]]:
+                        used_transitions.add(current_signature[i])
+                else:
+                    used_transitions.add(current_signature[i])
         return used_transitions
-
-    def update_down_capacities(next_config: FormalConfiguration,
-                               used_transitions: Dict[FormalConfiguration, Set[FormalConfiguration]],
-                               down_capacities: Dict[str, int]):
-        if type(next_config) is not str or next_config == UpArrow:
-            return used_transitions, down_capacities
-        down_capacities[next_config[1:]] -= 1
-        if down_capacities[next_config[1:]] == 0:
-            # Update used_transitions
-            for second_config in valid_transitions[next_config]:
-                # Delete all transitions down to this child
-                used_transitions[second_config].add(next_config)
-        return used_transitions, down_capacities
 
     # We need to enumerate all possible paths in G that don't repeat an edge.
     # This corresponds to signatures where a transition does not repeat.
     def dfs_scan_signatures(current_signature: List[FormalConfiguration],
-                            used_transitions: Dict[FormalConfiguration, Set[FormalConfiguration]],
-                            down_capacities: Dict[str, int],
                             max_sig_length: int):
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
@@ -249,7 +239,8 @@ def enumerate_signatures(vertex: str,
             if current_signature.count(UpArrow) == 2:
                 return
 
-        next_configs = valid_transitions[current_signature[-1]] - used_transitions[current_signature[-1]]
+        used_transitions = compute_used_transitions(tuple(current_signature))
+        next_configs = valid_transitions[current_signature[-1]] - used_transitions
 
         covered = set(reduce(set.union, [config.keys() for config in current_signature if type(config) is not str], set()))
         if all(
@@ -268,13 +259,9 @@ def enumerate_signatures(vertex: str,
                             if type(config) is str and not config in covered] + next_real_configs
 
         for next_config in next_configs:
-            next_used_transitions = update_used_transitions(tuple(current_signature), next_config, used_transitions.copy())
-            next_used_transitions, next_down_capacities = update_down_capacities(next_config, next_used_transitions, down_capacities.copy())
             next_signature = current_signature[:]+[next_config]
-            yield from dfs_scan_signatures(next_signature, next_used_transitions, next_down_capacities, max_sig_length)
+            yield from dfs_scan_signatures(next_signature, max_sig_length)
 
     yield from dfs_scan_signatures([start_config],
-                                   used_transitions=defaultdict(lambda: set()),
-                                   down_capacities=down_capacities,
                                    max_sig_length=max_sig_length)
 
