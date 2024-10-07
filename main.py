@@ -16,8 +16,6 @@ if __name__ == '__main__':
     tree = jaxsonville_tree()
     print_tree(tree)
 
-    t, _ = signatures_precompute('01', tree, 3, raw=False)
-
     start = time()
     traversal = fpt_compute_traversal(tree, 3, backtrack=True)
     end = time()
