@@ -12,8 +12,8 @@ from time import time
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # tree = example_tree()
-    tree = hard_example_tree()
-    # tree = jaxsonville_tree()
+    # tree = hard_example_tree()
+    tree = jaxsonville_tree()
     print_tree(tree)
 
     t, _ = signatures_precompute('01', tree, 3, raw=False)
