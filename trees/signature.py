@@ -187,12 +187,8 @@ def enumerate_signatures(vertex: str,
     #                                                    + {'↓'} (raw=False)
     # 2. E = an edge exists iff it is a valid transition
     # G is represented with an adjacency list valid_transitions:
-    if vertex == '01':
-        print("here")
     valid_transitions, budget = signatures_precompute(vertex, tree, num_robots, raw=raw)
 
-    if vertex == '01':
-        print('here')
     # down_capacity[vertex] specifies the maximal number of down arrows per child, overall.
     # E.g., due to collapsability, if child is a leaf in tree, down_capacity[child]=1, and there is only one transition
     # to this child.
@@ -263,10 +259,10 @@ def enumerate_signatures(vertex: str,
                 frozendict({'01': 1, '011': 1, '0112': 1}),
                 frozendict({'0': 1, '01': 1, '011': 1}),
                 frozendict({'': 1, '0': 1, '01': 1}),
-                # UpArrow
+                UpArrow
                 ]
         if current_signature == sig2:
-            print('here')
+            print('here!!!')
 
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
