@@ -48,11 +48,35 @@ def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = Fa
 
     # Recursively Compute tables of children.
     children_tables = {child.identifier: compute_table(child.identifier, tree, num_robots, backtrack=backtrack) for child in tree.children(vertex)}
-    down_capacities = {child: get_down_capacity(table) for child, table in children_tables.items()}
+    down_capacities = {DownArrow + child: get_down_capacity(table) for child, table in children_tables.items()}
     # Enumerate signatures at vertex:
-    signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False, down_capacities=down_capacities)
+    signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False, global_arrow_capacities=down_capacities)
 
     for signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
+        sig0 = [frozendict({'': 3}),
+                DownArrow + '0',
+                frozendict({'': 1, '0': 1, '01': 1}),
+                frozendict({'': 1, '0': 1, '2': 1}),
+                frozendict({'': 2, '1': 1}),
+                DownArrow + '1']
+        if signature == sig0:
+            print('here')
+
+        sig1 = [UpArrow, frozendict({'0': 3}), frozendict({'0': 1, '00': 1, '01': 1}),
+                frozendict({'0': 1, '01': 1, '010': 1}), DownArrow + '01', frozendict({'0': 1, '01': 1, '011': 1}),
+                frozendict({'': 1, '0': 1, '01': 1}), frozendict({'': 1, '0': 1, '2': 1}), UpArrow]
+        if signature == sig1:
+            print('here')
+
+        sig2 = [UpArrow, frozendict({'0': 1, '00': 1, '01': 1}), frozendict({'0': 1, '01': 1, '010': 1}),
+                frozendict({'01': 1, '010': 1, '0100': 1}), frozendict({'01': 1, '010': 1, '011': 1}),
+                frozendict({'01': 1, '011': 1, '0110': 1}), DownArrow + '011',
+                frozendict({'01': 1, '011': 1, '0112': 1}), frozendict({'0': 1, '01': 1, '011': 1}),
+                frozendict({'': 1, '0': 1, '01': 1}), UpArrow]
+        if signature == sig2:
+            print('here')
+
+
         matched_keys = True
         cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
         child_signatures = {}

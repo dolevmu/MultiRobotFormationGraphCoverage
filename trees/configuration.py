@@ -54,11 +54,13 @@ def is_connected(configuration: Configuration, tree: Tree) -> bool:
 
 
 # Recursively copy nodes from the parent subtree, excluding the vertex (current child)
-def add_subtree_excluding(tree, current_vertex, exclude_vertex, new_tree):
+def add_subtree_excluding(tree, current_vertex, exclude_vertex, new_tree, tail):
     for child in tree.children(current_vertex):
         if child.identifier != exclude_vertex:
-            new_tree.create_node(child.tag, child.identifier, parent=current_vertex)
-            add_subtree_excluding(tree, child.identifier, exclude_vertex, new_tree)
+            on_path = tree.is_ancestor(child.identifier, exclude_vertex)
+            if tail > 0 or on_path:
+                new_tree.create_node(child.tag, child.identifier, parent=current_vertex)
+                add_subtree_excluding(tree, child.identifier, exclude_vertex, new_tree, tail+on_path)
 
 
 def enumerate_configurations(vertex: str, tree: Tree, num_robots: int) -> List[Configuration]:
@@ -71,19 +73,24 @@ def enumerate_configurations(vertex: str, tree: Tree, num_robots: int) -> List[C
 
     # Handle the case where the vertex has a parent
     parent = tree.parent(vertex)
-    if parent:
+    node_depth = tree.depth(vertex)
+    if node_depth > 0 and num_robots > 1:
         # parent_tree = deepcopy(tree)
         # parent_tree.remove_node(vertex)
         # subtrees = [(tree.parent(vertex).identifier, parent_tree)] + subtrees
 
-        parent_subtree = tree.subtree(parent.identifier)
+        target_depth = max(0, node_depth - num_robots + 1)
+        # Get the ancestor at the target depth
+        k_ancesstor = tree.ancestor(vertex, level=target_depth)
+        k_ancesstor_subtree = tree.subtree(k_ancesstor.identifier)
         # Create a new subtree for the parent that excludes the current vertex (child)
-        new_parent_subtree = Tree()
-        new_parent_subtree.create_node(parent.tag, parent.identifier)  # Add the root of the parent
+        new_k_ancesstor_subtree = Tree()
+        new_k_ancesstor_subtree.create_node(k_ancesstor.tag, k_ancesstor.identifier)  # Add the root of the parent
         # Add the rest of the parent subtree, excluding the current vertex (child)
-        add_subtree_excluding(parent_subtree, parent.identifier, vertex, new_parent_subtree)
+        tail = max(0, num_robots - 1 - node_depth)
+        add_subtree_excluding(k_ancesstor_subtree, k_ancesstor.identifier, vertex, new_k_ancesstor_subtree, tail)
 
-        subtrees = [(parent.identifier, new_parent_subtree)] + subtrees
+        subtrees = [(parent.identifier, new_k_ancesstor_subtree)] + subtrees
 
     # The vertex has itself, its parent (if exists), and its children, at its neighborhood
     num_neighbors = 1 + len(subtrees)

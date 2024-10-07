@@ -2,7 +2,7 @@
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 from collections import Counter
 
-from trees.signature import project, compute_signature_cost
+from trees.signature import project, compute_signature_cost, signatures_precompute
 from trees.table import fpt_compute_traversal, fpt_compute_traversal_time
 from trees.traversal import print_traversal, is_traversal
 from trees.tree import hard_example_tree, example_tree, print_tree, jaxsonville_tree
@@ -15,6 +15,8 @@ if __name__ == '__main__':
     tree = hard_example_tree()
     # tree = jaxsonville_tree()
     print_tree(tree)
+
+    t, _ = signatures_precompute('01', tree, 3, raw=False)
 
     start = time()
     traversal = fpt_compute_traversal(tree, 3, backtrack=True)

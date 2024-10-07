@@ -1,5 +1,6 @@
 from collections import Counter, defaultdict
 from functools import reduce
+import numpy as np
 
 from frozendict import frozendict
 from treelib import Tree
@@ -179,22 +180,31 @@ def enumerate_signatures(vertex: str,
                          tree: Tree,
                          num_robots: int,
                          raw: bool,
-                         down_capacities: Optional[Dict[str, int]] = None,
+                         global_arrow_capacities: Optional[Dict[str, int]] = None,
                          max_sig_length: Optional[int] = None) -> Iterator[Signature]:
     # Let G=(V,E) be the following graph:
     # 1. V = {Configurations that occupy vertex} + {'↑'} + {Configurations projected to '↓'} (raw=True)
     #                                                    + {'↓'} (raw=False)
     # 2. E = an edge exists iff it is a valid transition
     # G is represented with an adjacency list valid_transitions:
+    if vertex == '01':
+        print("here")
     valid_transitions, budget = signatures_precompute(vertex, tree, num_robots, raw=raw)
 
+    if vertex == '01':
+        print('here')
     # down_capacity[vertex] specifies the maximal number of down arrows per child, overall.
     # E.g., due to collapsability, if child is a leaf in tree, down_capacity[child]=1, and there is only one transition
     # to this child.
-    if down_capacities is None:
-        down_capacities = dict()
+    if global_arrow_capacities is None:
+        global_arrow_capacities = dict()
         for child in tree.children(vertex):
-            down_capacities[child.identifier] = len(valid_transitions[DownArrow + child.identifier])
+            global_arrow_capacities[DownArrow + child.identifier] = len(valid_transitions[DownArrow + child.identifier])
+        if tree.parent(vertex):
+            global_arrow_capacities[UpArrow] = len(valid_transitions[UpArrow])
+
+    if tree.parent(vertex) and UpArrow not in global_arrow_capacities:
+        global_arrow_capacities[UpArrow] = len(valid_transitions[UpArrow])
 
     start_config = frozendict(Counter({vertex: num_robots})) if vertex == tree.root else UpArrow
 
@@ -203,25 +213,61 @@ def enumerate_signatures(vertex: str,
 
     max_sig_length = 8
 
-    def compute_used_transitions(current_signature: Signature) -> Set[FormalConfiguration]:
-        if type(current_signature[-1]) is str:
-            return set()
-        consumed_budget = Counter()
+    def compute_used_transitions(current_signature: List[FormalConfiguration]) -> Set[FormalConfiguration]:
         used_transitions = set()
+        consumed_global_budget = Counter()
+        for config in current_signature:
+            if type(config) is str:
+                consumed_global_budget[config] += 1
+        for config, count in consumed_global_budget.items():
+            if count == global_arrow_capacities[config]:
+                used_transitions.add(config)
+
+        consumed_budget = Counter()
         for i in range(1, len(current_signature)):
             if current_signature[i-1] == current_signature[-1]:
-                if type(current_signature[i]) is str and current_signature[i][0] == DownArrow:
+                if type(current_signature[i]) is str:
                     consumed_budget[current_signature[i]] += 1
-                    if consumed_budget[current_signature[i]] == down_capacities[current_signature[i][1:]]:
-                        used_transitions.add(current_signature[i])
-                else:
+                elif type(current_signature[-1]) is not str:
                     used_transitions.add(current_signature[i])
+        for config, count in consumed_budget.items():
+            if count == budget[(current_signature[-1], config)]:
+                used_transitions.add(config)
+
         return used_transitions
 
     # We need to enumerate all possible paths in G that don't repeat an edge.
     # This corresponds to signatures where a transition does not repeat.
     def dfs_scan_signatures(current_signature: List[FormalConfiguration],
                             max_sig_length: int):
+        sig0 = [frozendict({'': 3}),
+                DownArrow + '0',
+                frozendict({'': 1, '0': 1, '01': 1}),
+                frozendict({'': 1, '0': 1, '2': 1}),
+                frozendict({'': 2, '1': 1}),
+                DownArrow + '1']
+        if current_signature == sig0:
+            print('here')
+
+        sig1 = [UpArrow, frozendict({'0': 3}), frozendict({'0': 1, '00': 1, '01': 1}),
+                frozendict({'0': 1, '01': 1, '010': 1}), DownArrow + '01', frozendict({'0': 1, '01': 1, '011': 1}),
+                frozendict({'': 1, '0': 1, '01': 1}), frozendict({'': 1, '0': 1, '2': 1}), UpArrow]
+        if current_signature == sig1:
+            print('here')
+
+        sig2 = [UpArrow,
+                frozendict({'0': 1, '00': 1, '01': 1}),
+                frozendict({'0': 1, '01': 1, '010': 1}),
+                frozendict({'01': 1, '010': 1, '0100': 1}), frozendict({'01': 1, '010': 1, '011': 1}),
+                frozendict({'01': 1, '011': 1, '0110': 1}), DownArrow + '011',
+                frozendict({'01': 1, '011': 1, '0112': 1}),
+                frozendict({'0': 1, '01': 1, '011': 1}),
+                frozendict({'': 1, '0': 1, '01': 1}),
+                # UpArrow
+                ]
+        if current_signature == sig2:
+            print('here')
+
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
@@ -239,7 +285,7 @@ def enumerate_signatures(vertex: str,
             if current_signature.count(UpArrow) == 2:
                 return
 
-        used_transitions = compute_used_transitions(tuple(current_signature))
+        used_transitions = compute_used_transitions(current_signature)
         next_configs = valid_transitions[current_signature[-1]] - used_transitions
 
         covered = set(reduce(set.union, [config.keys() for config in current_signature if type(config) is not str], set()))
