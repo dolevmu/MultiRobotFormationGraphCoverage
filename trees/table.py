@@ -1,5 +1,6 @@
 from memory_profiler import profile
 import gc
+import hashlib
 import cProfile
 import pstats
 import io
@@ -12,7 +13,8 @@ from treelib import Tree
 from typing import Dict, NamedTuple, Optional
 
 from trees.configuration import find_root, UpArrow, DownArrow
-from trees.signature import Signature, project, enumerate_signatures, freeze_signature, get_child_key, _project
+from trees.signature import Signature, project, enumerate_signatures, freeze_signature, get_child_key, _project, \
+    unpack_signature, pack_signature
 from trees.traversal import Traversal, is_traversal
 
 
@@ -29,7 +31,8 @@ Table = Dict[Signature, TableEntry]
 def get_down_capacity(table: Table) -> int:
     max_capacity = 0
     for entry in table.values():
-        capacity = entry.signature.count(UpArrow) - (entry.signature[-1] == UpArrow)
+        signature = unpack_signature(entry.signature)
+        capacity = signature.count(UpArrow) - (signature[-1] == UpArrow)
         if capacity > max_capacity:
             max_capacity = capacity
     return max_capacity
@@ -53,13 +56,15 @@ def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = Fa
     # Enumerate signatures at vertex:
     signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False, global_arrow_capacities=down_capacities)
 
-    for signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
+    for packed_signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
+        signature = unpack_signature(packed_signature)
+
         matched_keys = True
         cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
         child_signatures = {}
 
         for child in tree.children(vertex):
-            child_key = freeze_signature(get_child_key(vertex, child.identifier, signature, tree))
+            child_key = hashlib.sha256(pack_signature(freeze_signature(get_child_key(vertex, child.identifier, signature, tree)))).hexdigest()
             if not child_key in children_tables[child.identifier]:
                 matched_keys = False
                 break
@@ -71,11 +76,11 @@ def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = Fa
             continue
 
         # Add signature to the table
-        signature_key = freeze_signature(project(parent, signature, tree))
+        signature_key = hashlib.sha256(pack_signature(freeze_signature(project(parent, signature, tree)))).hexdigest()
         if cost < table[signature_key].cost:
             # If found a signature with a smaller key, update table
             # TODO: we may have an even better condition: just consider configs before and after '↑' as the key
-            table[signature_key] = TableEntry(vertex, signature, child_signatures, cost)
+            table[signature_key] = TableEntry(vertex, packed_signature, child_signatures, cost)
 
     # Free memory...
     for child_table in children_tables.values():
@@ -166,4 +171,4 @@ def fpt_compute_traversal(tree: Tree, num_robots: int, backtrack: bool = True) -
         assert len(traversal) == root_table_entry.cost
         return traversal
     else:
-        print(f'Traversal time: {traversal_time}')
+        return traversal_time

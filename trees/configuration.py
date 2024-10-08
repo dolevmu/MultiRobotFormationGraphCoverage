@@ -1,6 +1,6 @@
-from copy import deepcopy
 from collections import Counter
 from itertools import combinations, product
+import msgpack
 import numpy as np
 from typing import Tuple, List, Optional, Union
 
@@ -150,3 +150,15 @@ def split_configuration(configuration: Configuration, tree: Tree) -> Tuple[Confi
     configuration_parent = Counter({v: k for v, k in configuration.items() if v not in tree.subtree(split_vertex)})
 
     return configuration_child, configuration_parent
+
+
+def pack_configuration(configuration: FormalConfiguration):
+    if type(configuration) is str:
+        return configuration
+    return msgpack.packb(tuple(sorted(configuration.items())))
+
+
+def unpack_configuration(packed_config):
+    if type(packed_config) is str:
+        return packed_config
+    return frozendict({v: count for v, count in msgpack.unpackb(packed_config)})

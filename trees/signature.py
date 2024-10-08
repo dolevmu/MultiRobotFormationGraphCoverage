@@ -1,5 +1,7 @@
 from collections import Counter, defaultdict
 from functools import reduce
+
+import msgpack
 import numpy as np
 
 from frozendict import frozendict
@@ -7,7 +9,7 @@ from treelib import Tree
 from typing import Tuple, Dict, Set, List, Optional, Iterator
 
 from trees.configuration import is_connected, enumerate_configurations, find_root, UpArrow, DownArrow, \
-    FormalConfiguration, FrozenFormalConfiguration, FormalTransition
+    FormalConfiguration, FrozenFormalConfiguration, FormalTransition, pack_configuration, unpack_configuration
 from trees.transition import is_transition, enumerate_transitions, is_up_transition
 
 Signature = Tuple[FormalConfiguration, ...]
@@ -247,7 +249,8 @@ def enumerate_signatures(vertex: str,
 
         if any(type(config) is not str for config in current_signature):
             # Add signature only if it visits vertex
-            yield current_signature
+            # yield current_signature
+            yield pack_signature(tuple(current_signature))
 
             # Heuristic: only get out once
             if current_signature.count(UpArrow) == 2:
@@ -279,3 +282,10 @@ def enumerate_signatures(vertex: str,
     yield from dfs_scan_signatures([start_config],
                                    max_sig_length=max_sig_length)
 
+
+def pack_signature(signature: Signature):
+    return msgpack.packb(tuple(pack_configuration(config) for config in signature))
+
+
+def unpack_signature(packed_signature) -> Signature:
+    return tuple(unpack_configuration(packed_config) for packed_config in msgpack.unpackb(packed_signature))
