@@ -35,13 +35,14 @@ def get_down_capacity(table: Table) -> int:
     return max_capacity
 
 
+PROFILING = False
+
 # @profile
 def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = False) -> Table:
-    if not backtrack:
+    if not backtrack and PROFILING:
         pr = cProfile.Profile()
         # Start profiling
         pr.enable()
-
 
     parent = vertex if vertex == tree.root else tree.parent(vertex).identifier
     table = defaultdict(lambda: TableEntry(vertex=vertex, signature=(), child_signatures={}, cost=2*tree.size()))
@@ -63,7 +64,8 @@ def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = Fa
                 matched_keys = False
                 break
             cost += children_tables[child.identifier][child_key].cost
-            child_signatures[child.identifier] = children_tables[child.identifier][child_key]
+            if backtrack:
+                child_signatures[child.identifier] = children_tables[child.identifier][child_key]
         if not matched_keys:
             # must find the projection of signature to all children
             continue
@@ -73,17 +75,16 @@ def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = Fa
         if cost < table[signature_key].cost:
             # If found a signature with a smaller key, update table
             # TODO: we may have an even better condition: just consider configs before and after '↑' as the key
-            if backtrack:
-                table[signature_key] = TableEntry(vertex, signature, child_signatures, cost)
-            else:
-                table[signature_key] = TableEntry(vertex, signature, {}, cost)
+            table[signature_key] = TableEntry(vertex, signature, child_signatures, cost)
 
     # Free memory...
     for child_table in children_tables.values():
         del child_table
         gc.collect()
+    del down_capacities
+    gc.collect()
 
-    if not backtrack:
+    if not backtrack and PROFILING:
         # Stop profiling
         pr.disable()
 
