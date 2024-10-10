@@ -91,7 +91,7 @@ def is_up_transition(vertex: str, transition: FormalTransition, tree: Tree, vali
 def _enumerate_transitions(configuration: Configuration, tree: Tree) -> List[Configuration]:
     assert is_connected(configuration, tree), "Invalid input configuration."
     num_occupied_vertices = len(configuration.keys())
-    num_robots = configuration.total()
+    num_robots = sum(configuration.values())
 
     if num_occupied_vertices == 1:
         vertex = list(configuration.keys())[0]
@@ -170,7 +170,7 @@ def _enumerate_transitions(configuration: Configuration, tree: Tree) -> List[Con
     # Option 4: split is not occupied.
     # If split is not occupied in both configurations, then we can only keep connectivity by moving to parent
     child_collected_configurations_unoccupied_split = [child_config for child_config in child_collected_configurations
-                                                       if child_config[parent_split] == child_config.total()]
+                                                       if child_config[parent_split] == sum(child_config.values())]
     parent_collected_configurations_unoccupied_split = [parent_config for parent_config in
                                                         parent_collected_configurations
                                                         if parent_config[split] == 0]

@@ -249,7 +249,6 @@ def enumerate_signatures(vertex: str,
 
         if any(type(config) is not str for config in current_signature):
             # Add signature only if it visits vertex
-            # yield current_signature
             yield pack_signature(tuple(current_signature))
 
             # Heuristic: only get out once
@@ -281,6 +280,108 @@ def enumerate_signatures(vertex: str,
 
     yield from dfs_scan_signatures([start_config],
                                    max_sig_length=max_sig_length)
+
+
+def enumerate_signatures_given_key(signature_key: Signature,
+                                   vertex: str,
+                                   tree: Tree,
+                                   num_robots: int,
+                                   raw: bool,
+                                   global_arrow_capacities: Optional[Dict[str, int]] = None,
+                                   max_sig_length: Optional[int] = None) -> Iterator[Signature]:
+
+    valid_transitions, budget = signatures_precompute(vertex, tree, num_robots, raw=raw)
+
+    if global_arrow_capacities is None:
+        global_arrow_capacities = dict()
+        for child in tree.children(vertex):
+            global_arrow_capacities[DownArrow + child.identifier] = len(valid_transitions[DownArrow + child.identifier])
+        if tree.parent(vertex):
+            global_arrow_capacities[UpArrow] = len(valid_transitions[UpArrow])
+    if tree.parent(vertex) and UpArrow not in global_arrow_capacities:
+        global_arrow_capacities[UpArrow] = len(valid_transitions[UpArrow])
+
+    start_config = frozendict(Counter({vertex: num_robots})) if vertex == tree.root else UpArrow
+
+    if max_sig_length is None:
+        max_sig_length = tree.size()  # always holds
+    max_sig_length = 8
+
+    def compute_used_transitions(current_signature: List[FormalConfiguration]) -> Set[FormalConfiguration]:
+        used_transitions = set()
+        consumed_global_budget = Counter()
+        for config in current_signature:
+            if type(config) is str:
+                consumed_global_budget[config] += 1
+        for config, count in consumed_global_budget.items():
+            if count == global_arrow_capacities[config]:
+                used_transitions.add(config)
+
+        consumed_budget = Counter()
+        for i in range(1, len(current_signature)):
+            if current_signature[i-1] == current_signature[-1]:
+                if type(current_signature[i]) is str:
+                    consumed_budget[current_signature[i]] += 1
+                elif type(current_signature[-1]) is not str:
+                    used_transitions.add(current_signature[i])
+        for config, count in consumed_budget.items():
+            if count == budget[(current_signature[-1], config)]:
+                used_transitions.add(config)
+
+        return used_transitions
+
+    # We need to enumerate all possible paths in G that don't repeat an edge.
+    # This corresponds to signatures where a transition does not repeat.
+    def dfs_scan_signatures(signature_key: Signature,
+                            current_signature: List[FormalConfiguration],
+                            max_sig_length: int):
+
+        if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
+            # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
+            # Indeed, connected configurations are collapsible.
+            return
+        if max_sig_length < len([config for config in current_signature if type(config) is not str]):
+            # No need to look at signatures longer than the upper bound
+            # A tight bound for k=2 is tree.size(): consider a star graph
+            return
+
+        if any(type(config) is not str for config in current_signature):
+            # Add signature only if it visits vertex
+            parent = vertex if vertex == tree.root else tree.parent(vertex).identifier
+            if project(parent, tuple(current_signature), tree) == signature_key:
+                yield pack_signature(tuple(current_signature))
+
+            # Heuristic: only get out once
+            if current_signature.count(UpArrow) == 2:
+                return
+
+        used_transitions = compute_used_transitions(current_signature)
+        next_configs = valid_transitions[current_signature[-1]] - used_transitions
+
+        covered = set(reduce(set.union, [config.keys() for config in current_signature if type(config) is not str], set()))
+        if all(
+                DownArrow + child.identifier in current_signature
+                or set(tree.subtree(child.identifier).nodes.keys()).issubset(covered)
+                for child in tree.children(vertex)):
+            # WLOG, due to collapsability, if searched all children, only go up
+            next_configs = [config for config in next_configs
+                            if is_up_transition(vertex, (current_signature[-1], config), tree, valid_transitions[current_signature[-1]])]
+        else:
+            # Heuristic: if didn't search all children, must cover a new node
+            covered = covered | {config for config in current_signature if type(config) is str} - {UpArrow}
+            next_real_configs = [config for config in next_configs
+                                 if type(config) is not str and not set(config.keys()).issubset(covered)]
+            next_configs = [config for config in next_configs
+                            if type(config) is str and not config in covered] + next_real_configs
+
+        for next_config in next_configs:
+            # Here, we must verify we match the signature key. One way is to check the prefix matches:
+            next_signature = current_signature[:]+[next_config]
+            next_partial_key = project(vertex, tuple(next_signature), tree)
+            if next_partial_key == tuple(list(signature_key)[:len(next_partial_key)]):
+                yield from dfs_scan_signatures(signature_key, next_signature, max_sig_length)
+
+    yield from dfs_scan_signatures(signature_key, [start_config], max_sig_length=max_sig_length)
 
 
 def pack_signature(signature: Signature):

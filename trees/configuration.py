@@ -2,12 +2,12 @@ from collections import Counter
 from itertools import combinations, product
 import msgpack
 import numpy as np
-from typing import Tuple, List, Optional, Union
+from typing import Tuple, List, Optional, Union, Dict
 
 from frozendict import frozendict
 from treelib import Tree
 
-Configuration = Counter[str, int]  # Maps vertex id to number of occupying robots
+Configuration = Dict[str, int]  # Maps vertex id to number of occupying robots
 
 UpArrow = '↑'
 DownArrow = '↓'
@@ -121,7 +121,7 @@ def enumerate_configurations(vertex: str, tree: Tree, num_robots: int) -> List[C
 def split_configuration(configuration: Configuration, tree: Tree) -> Tuple[Configuration, Configuration]:
     assert is_connected(configuration, tree), "Configuration is invalid"
 
-    num_robots = configuration.total()
+    num_robots = sum(configuration.values())
 
     configuration_root = find_root(configuration, tree)
 

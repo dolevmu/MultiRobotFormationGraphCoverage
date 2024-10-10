@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.11 (MultiRobotFormationGraphCoverage)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.11 (MultiRobotFormationGraphCoverage)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Remote Python 3.8.10 (sftp://aim@experiments3.biu-ai.com:15222/home/aim/.virtualenvs/MultiRobotFormationGraphCoverage/bin/python)" project-jdk-type="Python SDK" />
 </project>

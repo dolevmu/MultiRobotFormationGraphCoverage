@@ -1,4 +1,4 @@
-from memory_profiler import profile
+# from memory_profiler import profile
 import gc
 import hashlib
 import cProfile
@@ -16,6 +16,10 @@ from trees.configuration import find_root, UpArrow, DownArrow
 from trees.signature import Signature, project, enumerate_signatures, freeze_signature, get_child_key, _project, \
     unpack_signature, pack_signature
 from trees.traversal import Traversal, is_traversal
+
+PROFILING = False
+# Global dictionary to store tables
+tables = {}
 
 
 class TableEntry(NamedTuple):
@@ -37,8 +41,6 @@ def get_down_capacity(table: Table) -> int:
             max_capacity = capacity
     return max_capacity
 
-
-PROFILING = False
 
 # @profile
 def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = False) -> Table:
@@ -103,6 +105,85 @@ def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = Fa
         print(s.getvalue())
 
     return table
+
+
+# @profile
+def compute_table_root_dfs(tree: Tree, num_robots: int, backtrack: bool = False) -> Table:
+    if PROFILING:
+        pr = cProfile.Profile()
+        pr.enable()
+
+    # Initialize stack with the root node and a flag indicating it’s not ready for processing
+    stack = [(tree.root, False)]
+    visited = set()
+
+    while stack:
+        vertex, ready = stack.pop()
+
+        # If ready to process (all children have been processed)
+        if ready:
+            parent = vertex if vertex == tree.root else tree.parent(vertex).identifier
+            table = defaultdict(
+                lambda: TableEntry(vertex=vertex, signature=(), child_signatures={}, cost=2 * tree.size()))
+            children_tables = {child.identifier: tables[child.identifier] for child in tree.children(vertex) if
+                               child.identifier in tables}
+            down_capacities = {DownArrow + child: get_down_capacity(table) for child, table in children_tables.items()}
+            signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False,
+                                                       global_arrow_capacities=down_capacities)
+
+            for packed_signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
+                signature = unpack_signature(packed_signature)
+                matched_keys = True
+                cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
+                child_signatures = {}
+
+                for child in tree.children(vertex):
+                    child_key = hashlib.sha256(pack_signature(
+                        freeze_signature(get_child_key(vertex, child.identifier, signature, tree)))).hexdigest()
+                    if child_key not in children_tables[child.identifier]:
+                        matched_keys = False
+                        break
+                    cost += children_tables[child.identifier][child_key].cost
+                    if backtrack:
+                        child_signatures[child.identifier] = children_tables[child.identifier][child_key]
+
+                if not matched_keys:
+                    continue
+
+                signature_key = hashlib.sha256(
+                    pack_signature(freeze_signature(project(parent, signature, tree)))).hexdigest()
+                if cost < table[signature_key].cost:
+                    table[signature_key] = TableEntry(vertex, packed_signature, child_signatures, cost)
+
+            # Store the completed table for this node
+            tables[vertex] = table
+
+            # Free memory for children tables
+            for child in tree.children(vertex):
+                if child.identifier in tables:
+                    del tables[child.identifier]
+            gc.collect()
+            del down_capacities
+            gc.collect()
+
+        # If not ready, push it back onto the stack as ready, then push all children
+        else:
+            # Mark as ready for processing
+            stack.append((vertex, True))
+            for child in tree.children(vertex):
+                if child.identifier not in visited:
+                    stack.append((child.identifier, False))
+                    visited.add(child.identifier)
+
+    if PROFILING:
+        pr.disable()
+        s = io.StringIO()
+        ps = pstats.Stats(pr, stream=s).sort_stats('cumulative')
+        ps.print_stats(20)
+        print(s.getvalue())
+
+    # Return the root's table as the final result
+    return tables[tree.root]
 
 
 def _reconstruct(table_entry: TableEntry, tree: Tree) -> Traversal:
