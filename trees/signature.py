@@ -210,7 +210,8 @@ def enumerate_signatures(vertex: str,
     if max_sig_length is None:
         max_sig_length = tree.size()  # always holds
 
-    max_sig_length = 8
+    if heuristics_on:
+        max_sig_length = min(max_sig_length, 8)
 
     def compute_used_transitions(current_signature: List[FormalConfiguration]) -> Set[FormalConfiguration]:
         used_transitions = set()
@@ -289,7 +290,8 @@ def enumerate_signatures_given_key(signature_key: Signature,
                                    num_robots: int,
                                    raw: bool,
                                    global_arrow_capacities: Optional[Dict[str, int]] = None,
-                                   max_sig_length: Optional[int] = None) -> Iterator[Signature]:
+                                   max_sig_length: Optional[int] = None,
+                                   heuristics_on: bool = True) -> Iterator[Signature]:
 
     valid_transitions, budget = signatures_precompute(vertex, tree, num_robots, raw=raw)
 
@@ -306,7 +308,9 @@ def enumerate_signatures_given_key(signature_key: Signature,
 
     if max_sig_length is None:
         max_sig_length = tree.size()  # always holds
-    max_sig_length = 8
+
+    if heuristics_on:
+        max_sig_length = min(max_sig_length, 8)
 
     def compute_used_transitions(current_signature: List[FormalConfiguration]) -> Set[FormalConfiguration]:
         used_transitions = set()
@@ -335,8 +339,7 @@ def enumerate_signatures_given_key(signature_key: Signature,
     # This corresponds to signatures where a transition does not repeat.
     def dfs_scan_signatures(signature_key: Signature,
                             current_signature: List[FormalConfiguration],
-                            max_sig_length: int,
-                            heuristics_on: bool = True):
+                            max_sig_length: int):
 
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.

@@ -49,7 +49,7 @@ def jaxonville_plot():
     plt.show()
 
 
-def adelphi_plot(num_floors: int):
+def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
     adelphi_df = pd.DataFrame(columns=["# Floors", "# Vertices", "Traversal Time", "Computation Time (sec)", "Heuristics"])
     for floor in tqdm(range(1, num_floors + 1), total=num_floors):
         tree = adelphi_tree(num_floors=floor)
@@ -62,8 +62,8 @@ def adelphi_plot(num_floors: int):
         heuristic_traversal = fpt_compute_traversal(tree, 2, heuristics_on=True)
         heuristic_end = time()
 
-        adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), len(precise_traversal), precise_end - precise_start, False]
-        adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), len(heuristic_traversal), heuristic_end - heuristic_start, True]
+        adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), len(precise_traversal), precise_end - precise_start, "Off"]
+        adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), len(heuristic_traversal), heuristic_end - heuristic_start, "On"]
 
     # Set Seaborn style
     sns.set(style="whitegrid")
@@ -78,11 +78,16 @@ def adelphi_plot(num_floors: int):
     plt.show()
 
     # Plot computation time
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(10, 8))
     sns.lineplot(data=adelphi_df, x="# Floors", y="Computation Time (sec)", hue="Heuristics", marker="o")
-    plt.xlabel("# Floors", fontsize=14)
-    plt.ylabel("Computation Time (sec)", fontsize=14)
-    plt.title("Computation Time with and without Heuristics", fontsize=16)
-    plt.legend(title="Heuristics")
+    plt.xlabel("# Floors", fontsize=20)
+    plt.ylabel("Computation Time (sec)", fontsize=20)
+    # plt.title("Computation Time with and without Heuristics", fontsize=24)
+    plt.legend()  # title="Heuristics")
     plt.show()
+
+    tree = adelphi_tree(num_floors=3)
+    precise_traversal = fpt_compute_traversal(tree, 2, heuristics_on=False)
+    heuristic_traversal = fpt_compute_traversal(tree, 2, heuristics_on=True)
+
 

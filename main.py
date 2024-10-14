@@ -19,18 +19,15 @@ if __name__ == '__main__':
     tree = adelphi_tree(num_floors=3)
     print_tree(tree)
 
-    start = time()
-    traversal = fpt_compute_traversal(tree, 2, backtrack=BACK_TRACK, heuristics_on=False)
-    end = time()
+    precise_traversal = fpt_compute_traversal(tree, 2, heuristics_on=False)
+    heuristic_traversal = fpt_compute_traversal(tree, 2, heuristics_on=True)
 
-    print(f"Computation Time={end - start:.2f}")
-    if BACK_TRACK:
-        print(f"Traversal Time={len(traversal)}, Tree Size={tree.size()}")
-        print_traversal(traversal)
-    else:
-        print(f"Traversal Time={traversal}, Tree Size={tree.size()}")
+    print(len(precise_traversal), len(heuristic_traversal))
+
+    print([list(x.keys()) for x in precise_traversal])
+    print([list(x.keys()) for x in heuristic_traversal])
 
     # jaxonville_plot()
-    adelphi_plot(5)
+    # adelphi_plot(5)
 
 

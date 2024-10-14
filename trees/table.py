@@ -53,7 +53,8 @@ def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = Fa
     table = defaultdict(lambda: TableEntry(vertex=vertex, signature=(), child_signatures={}, cost=2*tree.size()))
 
     # Recursively Compute tables of children.
-    children_tables = {child.identifier: compute_table(child.identifier, tree, num_robots, backtrack=backtrack) for child in tree.children(vertex)}
+    children_tables = {child.identifier: compute_table(child.identifier, tree, num_robots, backtrack=backtrack,
+                                                       heuristics_on=heuristics_on) for child in tree.children(vertex)}
     down_capacities = {DownArrow + child: get_down_capacity(table) for child, table in children_tables.items()}
     # Enumerate signatures at vertex:
     signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False,
@@ -61,6 +62,12 @@ def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = Fa
 
     for packed_signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
         signature = unpack_signature(packed_signature)
+
+        if signature == (UpArrow,
+                         frozendict({'EL2': 1, 'EL3': 1}),
+                         frozendict({'EL3': 1, 'SH3': 1}),
+                         DownArrow + 'SH3'):
+            print('here')
 
         matched_keys = True
         cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
@@ -253,7 +260,7 @@ def fpt_compute_traversal(tree: Tree, num_robots: int, backtrack: bool = True, h
         # Reconstruct traversal from root_signature
         traversal = reconstruct(root_table_entry, tree)
         assert is_traversal(traversal, tree)
-        assert all(config.total() == num_robots for config in traversal)
+        assert all(sum(config.values()) == num_robots for config in traversal)
         assert len(traversal) == root_table_entry.cost
         return traversal
     else:
