@@ -197,22 +197,26 @@ def _reconstruct(table_entry: TableEntry, tree: Tree) -> Traversal:
     # Now we must compose the partial solution, by completing each down arrow with the corresponding sequence
     # from the child partial solution.
     partial_solution = []
-    for formal_config in table_entry.signature:
+    for formal_config in unpack_signature(table_entry.signature):
         if type(formal_config) is not str:
             partial_solution.append(formal_config)
         elif formal_config == UpArrow:
             partial_solution.append(formal_config)
         else:  # Here, we should take a sequence from a corresponding child
             child = formal_config[1:]
-            parent_project = _project(table_entry.vertex, partial_solutions[child], tree)
+            if type(partial_solutions[child]) is bytes:
+                child_partial_solution = unpack_signature(partial_solutions[child])
+            else:
+                child_partial_solution = partial_solutions[child]
+            parent_project = _project(table_entry.vertex, child_partial_solution, tree)
             parent_project = list(parent_project) + [UpArrow]
             start = parent_project.index(DownArrow + child)
             end = min(idx for idx, formal_config in enumerate(parent_project[start+1:], start+1)
                       if formal_config == UpArrow or
                       (type(formal_config) is not str and formal_config[table_entry.vertex] > 0))
-            partial_solution = partial_solution + partial_solutions[child][start:end]
-            if end + 1 < len(partial_solutions[child]):
-                partial_solutions[child] = partial_solutions[child][end+1:]
+            partial_solution = partial_solution + list(child_partial_solution)[start:end]
+            if end + 1 < len(child_partial_solution):
+                partial_solutions[child] = pack_signature(child_partial_solution[end+1:])
     return partial_solution
 
 

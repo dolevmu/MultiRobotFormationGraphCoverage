@@ -7,7 +7,7 @@ from trees.tree import print_tree, hard_example_tree, example_tree, jaxsonville_
 
 from time import time
 
-from plots.graphs import jaxonville_plot
+from plots.graphs import jaxonville_plot, adelphi_plot
 
 BACK_TRACK = False
 
@@ -31,3 +31,6 @@ if __name__ == '__main__':
         print(f"Traversal Time={traversal}, Tree Size={tree.size()}")
 
     # jaxonville_plot()
+    adelphi_plot(5)
+
+

@@ -1,5 +1,13 @@
+from time import time
+from tqdm import tqdm
+
 from matplotlib import pyplot as plt
 import pandas as pd
+import seaborn as sns
+
+from trees.table import fpt_compute_traversal
+from trees.tree import adelphi_tree
+
 
 def jaxonville_plot():
     jax_df = pd.DataFrame({
@@ -39,3 +47,42 @@ def jaxonville_plot():
 
     fig.tight_layout()  # Adjust layout for clarity
     plt.show()
+
+
+def adelphi_plot(num_floors: int):
+    adelphi_df = pd.DataFrame(columns=["# Floors", "# Vertices", "Traversal Time", "Computation Time (sec)", "Heuristics"])
+    for floor in tqdm(range(1, num_floors + 1), total=num_floors):
+        tree = adelphi_tree(num_floors=floor)
+
+        precise_start = time()
+        precise_traversal = fpt_compute_traversal(tree, 2, heuristics_on=False)
+        precise_end = time()
+
+        heuristic_start = time()
+        heuristic_traversal = fpt_compute_traversal(tree, 2, heuristics_on=True)
+        heuristic_end = time()
+
+        adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), len(precise_traversal), precise_end - precise_start, False]
+        adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), len(heuristic_traversal), heuristic_end - heuristic_start, True]
+
+    # Set Seaborn style
+    sns.set(style="whitegrid")
+
+    # Plot traversal time
+    plt.figure(figsize=(10, 6))
+    sns.lineplot(data=adelphi_df, x="# Floors", y="Traversal Time", hue="Heuristics", marker="o")
+    plt.xlabel("# Floors", fontsize=14)
+    plt.ylabel("Traversal Time", fontsize=14)
+    plt.title("Traversal Time with and without Heuristics", fontsize=16)
+    plt.legend(title="Heuristics")
+    plt.show()
+
+    # Plot computation time
+    plt.figure(figsize=(10, 6))
+    sns.lineplot(data=adelphi_df, x="# Floors", y="Computation Time (sec)", hue="Heuristics", marker="o")
+    plt.xlabel("# Floors", fontsize=14)
+    plt.ylabel("Computation Time (sec)", fontsize=14)
+    plt.title("Computation Time with and without Heuristics", fontsize=16)
+    plt.legend(title="Heuristics")
+    plt.show()
+
