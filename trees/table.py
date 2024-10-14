@@ -43,7 +43,7 @@ def get_down_capacity(table: Table) -> int:
 
 
 # @profile
-def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = False) -> Table:
+def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = False, heuristics_on: bool = True) -> Table:
     if not backtrack and PROFILING:
         pr = cProfile.Profile()
         # Start profiling
@@ -56,7 +56,8 @@ def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = Fa
     children_tables = {child.identifier: compute_table(child.identifier, tree, num_robots, backtrack=backtrack) for child in tree.children(vertex)}
     down_capacities = {DownArrow + child: get_down_capacity(table) for child, table in children_tables.items()}
     # Enumerate signatures at vertex:
-    signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False, global_arrow_capacities=down_capacities)
+    signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False,
+                                               global_arrow_capacities=down_capacities, heuristics_on=heuristics_on)
 
     for packed_signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
         signature = unpack_signature(packed_signature)
@@ -231,8 +232,8 @@ def fpt_compute_traversal_time(tree: Tree, num_robots: int) -> Traversal:
     return traversal_time
 
 
-def fpt_compute_traversal(tree: Tree, num_robots: int, backtrack: bool = True) -> Optional[Traversal]:
-    table = compute_table(tree.root, tree, num_robots, backtrack=backtrack)
+def fpt_compute_traversal(tree: Tree, num_robots: int, backtrack: bool = True, heuristics_on: bool = True) -> Optional[Traversal]:
+    table = compute_table(tree.root, tree, num_robots, backtrack=backtrack, heuristics_on=heuristics_on)
     # Find traversal with minimal cost
     root_table_entry = None
     traversal_time = 2*tree.size()

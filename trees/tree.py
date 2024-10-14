@@ -44,11 +44,13 @@ def hard_example_tree():
     return tree
 
 
-def jaxsonville_tree():
+def jaxsonville_tree(num_floors: int = 2):
     tree = Tree()
     ## Ground Floor ##
     tree.create_node("Elevator Floor 1", "EL1")  # root node
     tree.create_node("Ground Floor", "G", parent="EL1")
+    if num_floors == 1:
+        return tree
 
     ## Floor 2 ##
     tree.create_node("Elevator Floor 2", "EL2", parent="EL1")
@@ -92,6 +94,13 @@ def jaxsonville_tree():
     tree.create_node("Room 218", "R218", parent="SH2E3")
     tree.create_node("Room 219", "R219", parent="SH2E3")
 
+    if num_floors == 2:
+        return tree
+    """
+    Computation Time = 670.23
+    Traversal Time = 46, Tree Size = 42
+    """
+
     ## Floor 3 ##
     tree.create_node("Elevator Floor 3", "EL3", parent="EL2")
     tree.create_node("Main Hall Floor 3", "MH3", parent="EL3")
@@ -133,6 +142,13 @@ def jaxsonville_tree():
     tree.create_node("South Hall Floor 3 East 3", "SH3E3", parent="SH3E2")
     tree.create_node("Room 318", "R318", parent="SH3E3")
     tree.create_node("Room 319", "R319", parent="SH3E3")
+
+    if num_floors == 3:
+        return tree
+    """
+    Computation Time=1733.03
+    Traversal Time=98, Tree Size=82
+    """
 
     ## Floor 4 ##
     tree.create_node("Elevator Floor 4", "EL4", parent="EL3")
@@ -176,6 +192,13 @@ def jaxsonville_tree():
     tree.create_node("Room 418", "R418", parent="SH4E3")
     tree.create_node("Room 419", "R419", parent="SH4E3")
 
+    if num_floors == 4:
+        return tree
+    """
+    Computation Time=3428.89
+    Traversal Time=159, Tree Size=122
+    """
+
     ## Floor 5 ##
     tree.create_node("Elevator Floor 5", "EL5", parent="EL4")
     tree.create_node("Main Hall Floor 5", "MH5", parent="EL5")
@@ -218,6 +241,13 @@ def jaxsonville_tree():
     tree.create_node("Room 518", "R518", parent="SH5E3")
     tree.create_node("Room 519", "R519", parent="SH5E3")
 
+    if num_floors == 5:
+        return tree
+    """
+    Computation Time=5611.87
+    Traversal Time=211, Tree Size=162
+    """
+
     ## Floor 6 ##
     tree.create_node("Elevator Floor 6", "EL6", parent="EL5")
     tree.create_node("Main Hall Floor 6", "MH6", parent="EL6")
@@ -259,5 +289,42 @@ def jaxsonville_tree():
     tree.create_node("South Hall Floor 6 East 3", "SH6E3", parent="SH6E2")
     tree.create_node("Room 618", "R618", parent="SH6E3")
     tree.create_node("Room 619", "R619", parent="SH6E3")
+
+    if num_floors == 6:
+        return tree
+    """
+    Computation Time = 8239.31
+    Traversal Time = 264, Tree Size = 202
+    """
+
+    return tree
+
+
+def adelphi_tree(num_floors: int = 2):
+    tree = Tree()
+    ## Ground Floor ##
+    tree.create_node("Elevator Floor 1", "EL1")  # root node
+    tree.create_node("Ground Floor", "G", parent="EL1")
+    if num_floors == 1:
+        return tree
+
+    for floor in range(2, num_floors + 1):
+        tree.create_node(f"Elevator Floor {floor}", f"EL{floor}", parent=f"EL{floor-1}")
+        tree.create_node(f"Short Hall Floor {floor}", f"SH{floor}", parent=f"EL{floor}")
+        tree.create_node(f"Corner Floor {floor}", f"C{floor}", parent=f"SH{floor}")
+        tree.create_node(f"Main Hall 1 Floor {floor}", f"MH1F{floor}", parent=f"C{floor}")
+        tree.create_node(f"Room {floor}{1:02}", f"R{floor}{1:02}", parent=f"MH1F{floor}")
+        tree.create_node(f"Main Hall 2 Floor {floor}", f"MH2F{floor}", parent=f"MH1F{floor}")
+        tree.create_node(f"Room {floor}{2:02}", f"R{floor}{2:02}", parent=f"MH2F{floor}")
+        tree.create_node(f"Main Hall 3 Floor {floor}", f"MH3F{floor}", parent=f"MH2F{floor}")
+        tree.create_node(f"Room {floor}{3:02}", f"R{floor}{3:02}", parent=f"MH3F{floor}")
+        tree.create_node(f"Main Hall 4 Floor {floor}", f"MH4F{floor}", parent=f"MH3F{floor}")
+        tree.create_node(f"Room {floor}{4:02}", f"R{floor}{4:02}", parent=f"MH4F{floor}")
+        tree.create_node(f"Main Hall 5 Floor {floor}", f"MH5F{floor}", parent=f"MH4F{floor}")
+        tree.create_node(f"Main Hall 6 Floor {floor}", f"MH6F{floor}", parent=f"MH5F{floor}")
+        tree.create_node(f"Storage Room {floor}", f"SR{floor}", parent=f"MH6F{floor}")
+        tree.create_node(f"Twin Room {floor}", f"TR{floor}", parent=f"MH6F{floor}")
+        tree.create_node(f"Room {floor}{5:02}", f"R{floor}{5:02}", parent=f"TR{floor}")
+        tree.create_node(f"Room {floor}{6:02}", f"R{floor}{6:02}", parent=f"TR{floor}")
 
     return tree

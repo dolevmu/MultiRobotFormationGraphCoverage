@@ -183,7 +183,8 @@ def enumerate_signatures(vertex: str,
                          num_robots: int,
                          raw: bool,
                          global_arrow_capacities: Optional[Dict[str, int]] = None,
-                         max_sig_length: Optional[int] = None) -> Iterator[Signature]:
+                         max_sig_length: Optional[int] = None,
+                         heuristics_on: bool = True) -> Iterator[Signature]:
     # Let G=(V,E) be the following graph:
     # 1. V = {Configurations that occupy vertex} + {'↑'} + {Configurations projected to '↓'} (raw=True)
     #                                                    + {'↓'} (raw=False)
@@ -252,7 +253,7 @@ def enumerate_signatures(vertex: str,
             yield pack_signature(tuple(current_signature))
 
             # Heuristic: only get out once
-            if current_signature.count(UpArrow) == 2:
+            if current_signature.count(UpArrow) == 2 and heuristics_on:
                 return
 
         used_transitions = compute_used_transitions(current_signature)
@@ -266,7 +267,7 @@ def enumerate_signatures(vertex: str,
             # WLOG, due to collapsability, if searched all children, only go up
             next_configs = [config for config in next_configs
                             if is_up_transition(vertex, (current_signature[-1], config), tree, valid_transitions[current_signature[-1]])]
-        else:
+        elif heuristics_on:
             # Heuristic: if didn't search all children, must cover a new node
             covered = covered | {config for config in current_signature if type(config) is str} - {UpArrow}
             next_real_configs = [config for config in next_configs
@@ -334,7 +335,8 @@ def enumerate_signatures_given_key(signature_key: Signature,
     # This corresponds to signatures where a transition does not repeat.
     def dfs_scan_signatures(signature_key: Signature,
                             current_signature: List[FormalConfiguration],
-                            max_sig_length: int):
+                            max_sig_length: int,
+                            heuristics_on: bool = True):
 
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
@@ -352,7 +354,7 @@ def enumerate_signatures_given_key(signature_key: Signature,
                 yield pack_signature(tuple(current_signature))
 
             # Heuristic: only get out once
-            if current_signature.count(UpArrow) == 2:
+            if current_signature.count(UpArrow) == 2 and heuristics_on:
                 return
 
         used_transitions = compute_used_transitions(current_signature)
@@ -366,7 +368,7 @@ def enumerate_signatures_given_key(signature_key: Signature,
             # WLOG, due to collapsability, if searched all children, only go up
             next_configs = [config for config in next_configs
                             if is_up_transition(vertex, (current_signature[-1], config), tree, valid_transitions[current_signature[-1]])]
-        else:
+        elif heuristics_on:
             # Heuristic: if didn't search all children, must cover a new node
             covered = covered | {config for config in current_signature if type(config) is str} - {UpArrow}
             next_real_configs = [config for config in next_configs
