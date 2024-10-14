@@ -63,12 +63,6 @@ def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = Fa
     for packed_signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
         signature = unpack_signature(packed_signature)
 
-        if signature == (UpArrow,
-                         frozendict({'EL2': 1, 'EL3': 1}),
-                         frozendict({'EL3': 1, 'SH3': 1}),
-                         DownArrow + 'SH3'):
-            print('here')
-
         matched_keys = True
         cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
         child_signatures = {}
@@ -242,8 +236,26 @@ def fpt_compute_traversal_time(tree: Tree, num_robots: int) -> Traversal:
             traversal_time = table_entry.cost
     return traversal_time
 
+def compute_single_robot_traversal(tree: Tree, backtrack: bool = True):
+    def _compute_single_robot_traversal(tree: Tree):
+        traversal = [Counter({tree.root: 1})]
+        for _, child in sorted([(tree.subtree(child.identifier).depth(), child.identifier)
+                                for child in tree.children(tree.root)]):
+            sub_traversal = _compute_single_robot_traversal(tree.subtree(child))
+            traversal = traversal + sub_traversal
+        return traversal
+
+    if not backtrack:
+        return 2 * tree.size() - tree.depth()
+
+    traversal = _compute_single_robot_traversal(tree)
+    return traversal[:2 * tree.size() - tree.depth()]
+
 
 def fpt_compute_traversal(tree: Tree, num_robots: int, backtrack: bool = True, heuristics_on: bool = True) -> Optional[Traversal]:
+    if num_robots == 1:
+        return compute_single_robot_traversal(tree, backtrack)
+
     table = compute_table(tree.root, tree, num_robots, backtrack=backtrack, heuristics_on=heuristics_on)
     # Find traversal with minimal cost
     root_table_entry = None

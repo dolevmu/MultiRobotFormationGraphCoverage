@@ -7,7 +7,7 @@ from trees.tree import print_tree, hard_example_tree, example_tree, jaxsonville_
 
 from time import time
 
-from plots.graphs import jaxonville_plot, adelphi_plot
+from plots.graphs import jaxonville_plot, adelphi_plot, adelphi_robots_plot
 
 BACK_TRACK = False
 
@@ -16,18 +16,19 @@ if __name__ == '__main__':
     # tree = example_tree()
     # tree = hard_example_tree()
     # tree = jaxsonville_tree(num_floors=5)
-    tree = adelphi_tree(num_floors=3)
+    tree = adelphi_tree(num_floors=5)
     print_tree(tree)
 
-    precise_traversal = fpt_compute_traversal(tree, 2, heuristics_on=False)
-    heuristic_traversal = fpt_compute_traversal(tree, 2, heuristics_on=True)
-
-    print(len(precise_traversal), len(heuristic_traversal))
-
-    print([list(x.keys()) for x in precise_traversal])
-    print([list(x.keys()) for x in heuristic_traversal])
+    # precise_traversal = fpt_compute_traversal(tree, 2, heuristics_on=False)
+    # heuristic_traversal = fpt_compute_traversal(tree, 2, heuristics_on=True)
+    #
+    # print(len(precise_traversal), len(heuristic_traversal))
+    #
+    # print([list(x.keys()) for x in precise_traversal])
+    # print([list(x.keys()) for x in heuristic_traversal])
 
     # jaxonville_plot()
     # adelphi_plot(5)
+    adelphi_robots_plot(4)
 
 

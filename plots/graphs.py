@@ -86,8 +86,44 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
     plt.legend()  # title="Heuristics")
     plt.show()
 
-    tree = adelphi_tree(num_floors=3)
-    precise_traversal = fpt_compute_traversal(tree, 2, heuristics_on=False)
-    heuristic_traversal = fpt_compute_traversal(tree, 2, heuristics_on=True)
+def adelphi_robots_plot(num_robots: int):
+    tree = adelphi_tree(num_floors=5)
+
+    adelphi_df = pd.DataFrame(columns=["# Floors", "# Vertices", "# Robots", "Traversal Time", "Computation Time (sec)"])
+
+    for robots in range(1, num_robots + 1):
+        start = time()
+        traversal = fpt_compute_traversal(tree, robots, heuristics_on=True)
+        end = time()
+
+        adelphi_df.loc[len(adelphi_df)] = [5, tree.size(), robots, len(traversal), end - start]
+
+    # Convert computation time from seconds to hours
+    adelphi_df["# Computation Time (hours)"] = adelphi_df["# Computation Time (sec)"] / 3600
+
+    print(adelphi_df)
+
+    fig, ax1 = plt.subplots(figsize=(10, 8))
+
+    # Plot Traversal Time
+    ax1.plot(adelphi_df["# Robots"], adelphi_df["# Traversal Time"], label="Traversal Time", color="blue")
+    ax1.set_xlabel("# Robots", fontsize=20)
+    ax1.set_ylabel("# Traversal Time", color="blue", fontsize=20)
+    ax1.tick_params(axis='y', labelcolor="blue", labelsize=18)
+    ax1.tick_params(axis='x', labelsize=18)
+
+    # Set up secondary y-axis for Computation Time
+    ax2 = ax1.twinx()
+    ax2.plot(adelphi_df["# Robots"], adelphi_df["# Computation Time (hours)"], label="Computation Time (hours)",
+             color="red")
+    ax2.set_ylabel("# Computation Time (hours)", color="red", fontsize=20)
+    ax2.tick_params(axis='y', labelcolor="red", labelsize=18)
+
+    # Optional title
+    # plt.title("Adelphi Hotel: Traversal and Computation Time vs # Robots", fontsize=24)
+
+    fig.tight_layout()  # Adjust layout for clarity
+    plt.show()
+
 
 
