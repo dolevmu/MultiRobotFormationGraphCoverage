@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # print([list(x.keys()) for x in heuristic_traversal])
 
     # jaxonville_plot()
-    # adelphi_plot(5)
-    adelphi_robots_plot(4)
+    # adelphi_plot(4)
+    adelphi_robots_plot(1)
 
 

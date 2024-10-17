@@ -13,26 +13,26 @@ def jaxonville_plot():
     jax_df = pd.DataFrame({
         "# Floors": [1, 2, 3, 4, 5],
         "# Vertices": [42, 82, 122, 162, 202],
-        "# Traversal Time": [46, 98, 159, 211, 264],
-        "# Computation Time (sec)": [670.23, 1733.03, 3428.89, 5611.87, 8239.31]
+        "Traversal Time": [46, 98, 159, 211, 264],
+        "Computation Time (sec)": [670.23, 1733.03, 3428.89, 5611.87, 8239.31]
     })
 
     # Convert computation time from seconds to hours
-    jax_df["# Computation Time (hours)"] = jax_df["# Computation Time (sec)"] / 3600
+    jax_df["Computation Time (hours)"] = jax_df["Computation Time (sec)"] / 3600
 
     fig, ax1 = plt.subplots(figsize=(10, 8))
 
     # Plot Traversal Time
-    ax1.plot(jax_df["# Vertices"], jax_df["# Traversal Time"], label="Traversal Time", color="blue")
+    ax1.plot(jax_df["# Vertices"], jax_df["Traversal Time"], label="Traversal Time", color="blue")
     ax1.set_xlabel("# Vertices", fontsize=20)
-    ax1.set_ylabel("# Traversal Time", color="blue", fontsize=20)
+    ax1.set_ylabel("Traversal Time", color="blue", fontsize=20)
     ax1.tick_params(axis='y', labelcolor="blue", labelsize=18)
     ax1.tick_params(axis='x', labelsize=18)
 
     # Set up secondary y-axis for Computation Time
     ax2 = ax1.twinx()
-    ax2.plot(jax_df["# Vertices"], jax_df["# Computation Time (hours)"], label="Computation Time (hours)", color="red")
-    ax2.set_ylabel("# Computation Time (hours)", color="red", fontsize=20)
+    ax2.plot(jax_df["# Vertices"], jax_df["Computation Time (hours)"], label="Computation Time (hours)", color="red")
+    ax2.set_ylabel("Computation Time (hours)", color="red", fontsize=20)
     ax2.tick_params(axis='y', labelcolor="red", labelsize=18)
 
     # Set up secondary x-axis for # Floors
@@ -99,24 +99,24 @@ def adelphi_robots_plot(num_robots: int):
         adelphi_df.loc[len(adelphi_df)] = [5, tree.size(), robots, len(traversal), end - start]
 
     # Convert computation time from seconds to hours
-    adelphi_df["# Computation Time (hours)"] = adelphi_df["# Computation Time (sec)"] / 3600
+    adelphi_df["Computation Time (hours)"] = adelphi_df["Computation Time (sec)"] / 3600
 
     print(adelphi_df)
 
     fig, ax1 = plt.subplots(figsize=(10, 8))
 
     # Plot Traversal Time
-    ax1.plot(adelphi_df["# Robots"], adelphi_df["# Traversal Time"], label="Traversal Time", color="blue")
+    ax1.plot(adelphi_df["# Robots"], adelphi_df["Traversal Time"], label="Traversal Time", color="blue")
     ax1.set_xlabel("# Robots", fontsize=20)
-    ax1.set_ylabel("# Traversal Time", color="blue", fontsize=20)
+    ax1.set_ylabel("Traversal Time", color="blue", fontsize=20)
     ax1.tick_params(axis='y', labelcolor="blue", labelsize=18)
     ax1.tick_params(axis='x', labelsize=18)
 
     # Set up secondary y-axis for Computation Time
     ax2 = ax1.twinx()
-    ax2.plot(adelphi_df["# Robots"], adelphi_df["# Computation Time (hours)"], label="Computation Time (hours)",
+    ax2.plot(adelphi_df["# Robots"], adelphi_df["Computation Time (hours)"], label="Computation Time (hours)",
              color="red")
-    ax2.set_ylabel("# Computation Time (hours)", color="red", fontsize=20)
+    ax2.set_ylabel("Computation Time (hours)", color="red", fontsize=20)
     ax2.tick_params(axis='y', labelcolor="red", labelsize=18)
 
     # Optional title

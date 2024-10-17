@@ -236,6 +236,17 @@ def fpt_compute_traversal_time(tree: Tree, num_robots: int) -> Traversal:
             traversal_time = table_entry.cost
     return traversal_time
 
+def compute_single_robot_traversal_time(tree: Tree):
+    def dfs_visit(vertex: str):
+        children = tree.children(vertex)
+        if len(children) > 1:
+            return max(dfs_visit(child.identifier) for child in children)
+        elif len(children) == 1:
+            return dfs_visit(children[0].identifier) + 1
+        else:
+            return 1
+
+
 def compute_single_robot_traversal(tree: Tree, backtrack: bool = True):
     def _compute_single_robot_traversal(tree: Tree):
         traversal = [Counter({tree.root: 1})]
@@ -253,8 +264,8 @@ def compute_single_robot_traversal(tree: Tree, backtrack: bool = True):
 
 
 def fpt_compute_traversal(tree: Tree, num_robots: int, backtrack: bool = True, heuristics_on: bool = True) -> Optional[Traversal]:
-    if num_robots == 1:
-        return compute_single_robot_traversal(tree, backtrack)
+    # if num_robots == 1:
+    #     return compute_single_robot_traversal(tree, backtrack)
 
     table = compute_table(tree.root, tree, num_robots, backtrack=backtrack, heuristics_on=heuristics_on)
     # Find traversal with minimal cost
