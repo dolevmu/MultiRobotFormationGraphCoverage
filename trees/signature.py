@@ -200,10 +200,10 @@ def enumerate_signatures(vertex: str,
         for child in tree.children(vertex):
             global_arrow_capacities[DownArrow + child.identifier] = len(valid_transitions[DownArrow + child.identifier])
         if tree.parent(vertex):
-            global_arrow_capacities[UpArrow] = len(valid_transitions[UpArrow])
+            global_arrow_capacities[UpArrow] = len(valid_transitions[UpArrow]) + 1
 
     if tree.parent(vertex) and UpArrow not in global_arrow_capacities:
-        global_arrow_capacities[UpArrow] = len(valid_transitions[UpArrow])
+        global_arrow_capacities[UpArrow] = len(valid_transitions[UpArrow]) + 1
 
     start_config = frozendict(Counter({vertex: num_robots})) if vertex == tree.root else UpArrow
 
@@ -240,6 +240,11 @@ def enumerate_signatures(vertex: str,
     # This corresponds to signatures where a transition does not repeat.
     def dfs_scan_signatures(current_signature: List[FormalConfiguration],
                             max_sig_length: int):
+        if current_signature == [UpArrow,
+                                 frozendict({'TR5': 1}),
+                                 DownArrow + 'R506']:
+            print('here')
+
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
@@ -268,7 +273,7 @@ def enumerate_signatures(vertex: str,
             # WLOG, due to collapsability, if searched all children, only go up
             next_configs = [config for config in next_configs
                             if is_up_transition(vertex, (current_signature[-1], config), tree, valid_transitions[current_signature[-1]])]
-        elif heuristics_on:
+        elif heuristics_on and num_robots > 1:
             # Heuristic: if didn't search all children, must cover a new node
             covered = covered | {config for config in current_signature if type(config) is str} - {UpArrow}
             next_real_configs = [config for config in next_configs
