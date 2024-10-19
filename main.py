@@ -1,6 +1,6 @@
 # Press ⌃R to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-
+from trees.signature import enumerate_signatures, unpack_signature
 from trees.table import fpt_compute_traversal
 from trees.traversal import print_traversal
 from trees.tree import print_tree, hard_example_tree, example_tree, jaxsonville_tree, adelphi_tree
@@ -19,16 +19,10 @@ if __name__ == '__main__':
     tree = adelphi_tree(num_floors=5)
     print_tree(tree)
 
-    # precise_traversal = fpt_compute_traversal(tree, 2, heuristics_on=False)
-    # heuristic_traversal = fpt_compute_traversal(tree, 2, heuristics_on=True)
-    #
-    # print(len(precise_traversal), len(heuristic_traversal))
-    #
-    # print([list(x.keys()) for x in precise_traversal])
-    # print([list(x.keys()) for x in heuristic_traversal])
+    # sigs = enumerate_signatures('MH6F2', tree, 2, heuristics_on=False)
 
     # jaxonville_plot()
-    # adelphi_plot(4)
-    adelphi_robots_plot(1)
+    adelphi_plot(5)
+    # adelphi_robots_plot(4)
 
 

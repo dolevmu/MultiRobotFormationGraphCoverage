@@ -50,8 +50,18 @@ def jaxonville_plot():
 
 
 def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
-    adelphi_df = pd.DataFrame(columns=["# Floors", "# Vertices", "Traversal Time", "Computation Time (sec)", "Heuristics"])
-    for floor in tqdm(range(1, num_floors + 1), total=num_floors):
+
+    adelphi_df = pd.DataFrame(data={"# Floors": [1, 1, 2, 2],
+                                    "# Vertices": [2, 2, 19, 19],
+                                    "Traversal Time": [2, 2, 19, 19],
+                                    "Computation Time (sec)": [0.0759727954864502, 0.04541015625, 244.18337988853455, 83.10970425605774],
+                                    "Heuristics": ["Off", "On", "Off", "On"]})
+
+
+    computed = len(adelphi_df)
+
+    for floor in tqdm(range(computed + 1, num_floors + 1), total=num_floors - computed):
+        print(f"Floor num. {floor}")
         tree = adelphi_tree(num_floors=floor)
 
         precise_start = time()
@@ -64,6 +74,9 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
 
         adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), len(precise_traversal), precise_end - precise_start, "Off"]
         adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), len(heuristic_traversal), heuristic_end - heuristic_start, "On"]
+
+        print([floor, tree.size(), len(precise_traversal), precise_end - precise_start, "Off"])
+        print([floor, tree.size(), len(heuristic_traversal), heuristic_end - heuristic_start, "On"])
 
     # Set Seaborn style
     sns.set(style="whitegrid")
@@ -89,9 +102,13 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
 def adelphi_robots_plot(num_robots: int):
     tree = adelphi_tree(num_floors=5)
 
-    adelphi_df = pd.DataFrame(columns=["# Floors", "# Vertices", "# Robots", "Traversal Time", "Computation Time (sec)"])
-
-    for robots in range(1, num_robots + 1):
+    adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5],
+                                    "# Vertices": [70, 70, 70],
+                                    "# Robots": [1, 2, 3],
+                                    "Traversal Time": [125, 110, 91],
+                                    "Computation Time (sec)": [2.329224, 4.141321, 534.187461]})
+    computed = len(adelphi_df)
+    for robots in tqdm(range(computed + 1, num_robots + 1), total=num_robots - computed):
         start = time()
         traversal = fpt_compute_traversal(tree, robots, heuristics_on=True)
         end = time()

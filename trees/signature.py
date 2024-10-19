@@ -181,7 +181,7 @@ def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
 def enumerate_signatures(vertex: str,
                          tree: Tree,
                          num_robots: int,
-                         raw: bool,
+                         raw: bool = False,
                          global_arrow_capacities: Optional[Dict[str, int]] = None,
                          max_sig_length: Optional[int] = None,
                          heuristics_on: bool = True) -> Iterator[Signature]:
@@ -210,7 +210,7 @@ def enumerate_signatures(vertex: str,
     if max_sig_length is None:
         max_sig_length = tree.size()  # always holds
 
-    if heuristics_on:
+    if heuristics_on or True:
         max_sig_length = min(max_sig_length, 8)
 
     def compute_used_transitions(current_signature: List[FormalConfiguration]) -> Set[FormalConfiguration]:
@@ -240,11 +240,6 @@ def enumerate_signatures(vertex: str,
     # This corresponds to signatures where a transition does not repeat.
     def dfs_scan_signatures(current_signature: List[FormalConfiguration],
                             max_sig_length: int):
-        if current_signature == [UpArrow,
-                                 frozendict({'TR5': 1}),
-                                 DownArrow + 'R506']:
-            print('here')
-
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
