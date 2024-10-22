@@ -51,11 +51,25 @@ def jaxonville_plot():
 
 def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
 
-    adelphi_df = pd.DataFrame(data={"# Floors": [1, 1, 2, 2],
-                                    "# Vertices": [2, 2, 19, 19],
-                                    "Traversal Time": [2, 2, 19, 19],
-                                    "Computation Time (sec)": [0.0759727954864502, 0.04541015625, 244.18337988853455, 83.10970425605774],
-                                    "Heuristics": ["Off", "On", "Off", "On"]})
+    adelphi_df = pd.DataFrame(data={"# Floors": [],
+                                    "# Vertices": [],
+                                    "Traversal Time": [],
+                                    "Computation Time (sec)": [],
+                                    "Heuristics": []})
+
+    # adelphi_df = pd.DataFrame(data={"# Floors": [1, 1, 2, 2, 3, 3, 4, 4, 5, 5],
+    #                                 "# Vertices": [2, 2, 19, 19, 36, 36, 53, 53, 70, 70],
+    #                                 "Traversal Time": [2, 2,
+    #                                                    19, 19,
+    #                                                    45, 56,
+    #                                                    71, 83,
+    #                                                    97, 110],
+    #                                 "Computation Time (sec)": [0.0759727954864502, 0.04541015625,
+    #                                                            244.18337988853455, 83.10970425605774,
+    #                                                            5384.65568614006, 45812.05362486839,
+    #                                                            3185.543482065201, 2834.186688184738,
+    #                                                            5142.664044380188, 6190.431360960007],
+    #                                 "Heuristics": ["Off", "On", "Off", "On", "Off", "On", "Off", "On"]})
 
 
     computed = len(adelphi_df)

@@ -309,7 +309,7 @@ def enumerate_signatures_given_key(signature_key: Signature,
     if max_sig_length is None:
         max_sig_length = tree.size()  # always holds
 
-    if heuristics_on:
+    if heuristics_on or True:
         max_sig_length = min(max_sig_length, 8)
 
     def compute_used_transitions(current_signature: List[FormalConfiguration]) -> Set[FormalConfiguration]:
