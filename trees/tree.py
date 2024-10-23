@@ -1,10 +1,10 @@
 from treelib import Tree
 from typing import Optional
-
+from tqdm import tqdm
 
 def print_tree(tree: Tree, data_property: Optional[str]=None):
     tree_str = tree.show(stdout=False, data_property=data_property)
-    print(tree_str)
+    tqdm.write(tree_str)
 
 
 def example_tree():

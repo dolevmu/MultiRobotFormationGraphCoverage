@@ -73,9 +73,8 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
 
 
     computed = len(adelphi_df)
-
-    for floor in tqdm(range(computed + 1, num_floors + 1), total=num_floors - computed):
-        print(f"Floor num. {floor}")
+    for floor in range(computed + 1, num_floors + 1):
+        print(f"Floor {floor}/{num_floors}")
         tree = adelphi_tree(num_floors=floor)
 
         precise_start = time()
@@ -85,6 +84,9 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
         heuristic_start = time()
         heuristic_traversal = fpt_compute_traversal(tree, 2, heuristics_on=True)
         heuristic_end = time()
+
+        print(f"Precise: {precise_end-precise_start}")
+        print(f"Heuristic: {heuristic_end-heuristic_start}")
 
         adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), len(precise_traversal), precise_end - precise_start, "Off"]
         adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), len(heuristic_traversal), heuristic_end - heuristic_start, "On"]
@@ -122,7 +124,9 @@ def adelphi_robots_plot(num_robots: int):
                                     "Traversal Time": [125, 110, 91],
                                     "Computation Time (sec)": [2.329224, 4.141321, 534.187461]})
     computed = len(adelphi_df)
-    for robots in tqdm(range(computed + 1, num_robots + 1), total=num_robots - computed):
+    total = num_robots - computed
+    for robots in range(computed + 1, num_robots + 1):
+        print(f"Robots {robots}/{num_robots}")
         start = time()
         traversal = fpt_compute_traversal(tree, robots, heuristics_on=True)
         end = time()
