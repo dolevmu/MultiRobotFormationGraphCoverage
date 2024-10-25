@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # cProfile.run("compute_table('EL1', tree, 2, False, heuristics_on=True)")
 
     # jaxonville_plot()
-    adelphi_plot(3)
+    adelphi_plot(5)
     # adelphi_robots_plot(4)
 
 
