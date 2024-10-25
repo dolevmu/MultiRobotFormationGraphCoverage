@@ -169,9 +169,6 @@ def adelphi_robots_plot(num_robots: int):
     ax2.set_ylabel("Computation Time (hours)", color="red", fontsize=20)
     ax2.tick_params(axis='y', labelcolor="red", labelsize=18)
 
-    # Optional title
-    # plt.title("Adelphi Hotel: Traversal and Computation Time vs # Robots", fontsize=24)
-
     fig.tight_layout()  # Adjust layout for clarity
     plt.show()
 
