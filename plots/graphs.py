@@ -57,15 +57,18 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
     #                                 "Computation Time (sec)": [],
     #                                 "Heuristics": []})
 
-    adelphi_df = pd.DataFrame(data={"# Floors": [1, 1, 2, 2, 3, 3],
-                                    "# Vertices": [2, 2, 19, 19, 36, 36],
+    adelphi_df = pd.DataFrame(data={"# Floors": [1, 1, 2, 2, 3, 3, 4, 4],
+                                    "# Vertices": [2, 2, 19, 19, 36, 36, 53, 53],
                                     "Traversal Time": [2, 2,
                                                        19, 19,
-                                                       45, 45],
+                                                       45, 45,
+                                                       71, 71],
                                     "Computation Time (sec)": [0.04491138458251953, 0.041311025619506836,
                                                                457.55689001083374, 110.27886056900024,
-                                                               1583.7888889312744, 919.4530813694],
-                                    "Heuristics": ["Off", "On", "Off", "On", "Off", "On"]})
+                                                               1583.7888889312744, 919.4530813694,
+                                                               3223.60542011261, 2899.9116559028625],
+                                    "Heuristics": ["Off", "On", "Off", "On", "Off", "On", "Off", "On"]})
+
     #
     #
     # adelphi_df = pd.DataFrame(data={"# Floors": [1, 1, 2, 2, 3, 3, 4, 4, 5, 5],
