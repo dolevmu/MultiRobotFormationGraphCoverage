@@ -61,13 +61,13 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
                                     "# Vertices": [2, 2, 19, 19, 36, 36],
                                     "Traversal Time": [2, 2,
                                                        19, 19,
-                                                       45, 56],
+                                                       45, 45],
                                     "Computation Time (sec)": [0.04491138458251953, 0.041311025619506836,
                                                                457.55689001083374, 110.27886056900024,
-                                                               1631.712432384491, 918.9196190834045],
+                                                               1583.7888889312744, 919.4530813694],
                                     "Heuristics": ["Off", "On", "Off", "On", "Off", "On"]})
-
-
+    #
+    #
     # adelphi_df = pd.DataFrame(data={"# Floors": [1, 1, 2, 2, 3, 3, 4, 4, 5, 5],
     #                                 "# Vertices": [2, 2, 19, 19, 36, 36, 53, 53, 70, 70],
     #                                 "Traversal Time": [2, 2,
@@ -100,8 +100,8 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
         heuristic_traversal = fpt_compute_traversal(tree, 2, heuristics_on=True)
         heuristic_end = time()
 
-        print(f"Precise: {precise_end-precise_start}")
-        print(f"Heuristic: {heuristic_end-heuristic_start}")
+        print(f"Precise: {precise_end-precise_start}, {len(precise_traversal)}")
+        print(f"Heuristic: {heuristic_end-heuristic_start}, {len(heuristic_traversal)}")
 
         adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), len(precise_traversal), precise_end - precise_start, "Off"]
         adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), len(heuristic_traversal), heuristic_end - heuristic_start, "On"]

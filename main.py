@@ -2,7 +2,11 @@
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 import cProfile
 
-from trees.signature import enumerate_signatures, unpack_signature
+from frozendict import frozendict
+from tqdm import tqdm
+
+from trees.configuration import DownArrow
+from trees.signature import enumerate_signatures, unpack_signature, project
 from trees.table import fpt_compute_traversal, compute_table
 from trees.traversal import print_traversal
 from trees.tree import print_tree, hard_example_tree, example_tree, jaxsonville_tree, adelphi_tree

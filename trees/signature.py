@@ -269,12 +269,13 @@ def enumerate_signatures(vertex: str,
             next_configs = [config for config in next_configs
                             if is_up_transition(vertex, (current_signature[-1], config), tree, valid_transitions[current_signature[-1]])]
         elif heuristics_on and num_robots > 1:
-            # Heuristic: if didn't search all children, must cover a new node
+            # Heuristic: if didn't search all children, must cover a new node *when possible*
             covered = covered | {config for config in current_signature if type(config) is str} - {UpArrow}
             next_real_configs = [config for config in next_configs
                                  if type(config) is not str and not set(config.keys()).issubset(covered)]
-            next_configs = [config for config in next_configs
-                            if type(config) is str and not config in covered] + next_real_configs
+            next_symbolic_configs = [config for config in next_configs if type(config) is str and not config in covered]
+            if len(next_real_configs) + len(next_symbolic_configs) > 0:
+                next_configs = next_real_configs + next_symbolic_configs
 
         for next_config in next_configs:
             next_signature = current_signature[:]+[next_config]
