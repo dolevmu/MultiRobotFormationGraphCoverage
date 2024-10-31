@@ -43,7 +43,12 @@ def get_down_capacity(table: Table) -> int:
 
 
 # @profile
-def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = False, heuristics_on: bool = True) -> Table:
+def compute_table(vertex: str,
+                  tree: Tree,
+                  num_robots: int,
+                  backtrack: bool = False,
+                  heuristics_on: bool = True,
+                  parallel: bool = True) -> Table:
     if not backtrack and PROFILING:
         pr = cProfile.Profile()
         # Start profiling
@@ -58,7 +63,8 @@ def compute_table(vertex: str, tree: Tree, num_robots: int, backtrack: bool = Fa
     down_capacities = {DownArrow + child: get_down_capacity(table) for child, table in children_tables.items()}
     # Enumerate signatures at vertex:
     signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False,
-                                               global_arrow_capacities=down_capacities, heuristics_on=heuristics_on)
+                                               global_arrow_capacities=down_capacities,
+                                               heuristics_on=heuristics_on, parallel=parallel)
 
     for packed_signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
         signature = unpack_signature(packed_signature)
@@ -263,11 +269,13 @@ def compute_single_robot_traversal(tree: Tree, backtrack: bool = True):
     return traversal[:2 * tree.size() - tree.depth()]
 
 
-def fpt_compute_traversal(tree: Tree, num_robots: int, backtrack: bool = True, heuristics_on: bool = True) -> Optional[Traversal]:
-    # if num_robots == 1:
-    #     return compute_single_robot_traversal(tree, backtrack)
-
-    table = compute_table(tree.root, tree, num_robots, backtrack=backtrack, heuristics_on=heuristics_on)
+def fpt_compute_traversal(tree: Tree,
+                          num_robots: int,
+                          backtrack: bool = True,
+                          heuristics_on: bool = True,
+                          parallel: bool = True) -> Optional[Traversal]:
+    table = compute_table(tree.root, tree, num_robots,
+                          backtrack=backtrack, heuristics_on=heuristics_on, parallel=parallel)
     # Find traversal with minimal cost
     root_table_entry = None
     traversal_time = 2*tree.size()

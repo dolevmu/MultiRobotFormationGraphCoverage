@@ -184,7 +184,12 @@ def enumerate_signatures(vertex: str,
                          raw: bool = False,
                          global_arrow_capacities: Optional[Dict[str, int]] = None,
                          max_sig_length: Optional[int] = None,
-                         heuristics_on: bool = True) -> Iterator[Signature]:
+                         heuristics_on: bool = True,
+                         parallel: bool = True) -> Iterator[Signature]:
+    if parallel:
+        from trees.parallel import parallel_enumerate_signatures
+        return parallel_enumerate_signatures(vertex, tree, num_robots, raw, global_arrow_capacities, max_sig_length, heuristics_on)
+
     # Let G=(V,E) be the following graph:
     # 1. V = {Configurations that occupy vertex} + {'↑'} + {Configurations projected to '↓'} (raw=True)
     #                                                    + {'↓'} (raw=False)

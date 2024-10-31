@@ -25,7 +25,10 @@ if __name__ == '__main__':
     tree = adelphi_tree(num_floors=3)
     print_tree(tree)
 
-    sigs = enumerate_signatures('MH6F2', tree, 2, heuristics_on=False)
+    # res = fpt_compute_traversal(tree, 3, parallel=True)
+    # print(res)
+
+    sigs = enumerate_signatures('MH6F2', tree, 2, heuristics_on=False, parallel=True)
     for sig in tqdm(sigs):
         pass
 
