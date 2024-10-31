@@ -118,11 +118,13 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
 def adelphi_robots_plot(num_robots: int):
     tree = adelphi_tree(num_floors=5)
 
-    adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5],
+    adelphi_df = pd.DataFrame(data={"# Floors": [1, 2, 3],
                                     "# Vertices": [70, 70, 70],
                                     "# Robots": [1, 2, 3],
-                                    "Traversal Time": [125, 110, 91],
-                                    "Computation Time (sec)": [2.329224, 4.141321, 534.187461]})
+                                    "Traversal Time": [125, 97, 87],
+                                    "Computation Time (sec)": [2.298217535018921, 7.478943586349487, 1592.7058815956116]})
+
+
     computed = len(adelphi_df)
     total = num_robots - computed
     for robots in range(computed + 1, num_robots + 1):
@@ -132,6 +134,10 @@ def adelphi_robots_plot(num_robots: int):
         end = time()
 
         adelphi_df.loc[len(adelphi_df)] = [5, tree.size(), robots, len(traversal), end - start]
+        print()
+        print(f"Num robots = {robots}: ")
+        print([5, tree.size(), robots, len(traversal), end - start])
+        print()
 
     # Convert computation time from seconds to hours
     adelphi_df["Computation Time (hours)"] = adelphi_df["Computation Time (sec)"] / 3600

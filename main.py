@@ -25,14 +25,13 @@ if __name__ == '__main__':
     tree = adelphi_tree(num_floors=3)
     print_tree(tree)
 
-    # cProfile.run("enumerate_signatures('MH6F3', tree, 2, heuristics_on=False)")
-    # cProfile.run("enumerate_signatures('MH6F3', tree, 2, heuristics_on=True)")
-
-    # cProfile.run("compute_table('EL1', tree, 2, False, heuristics_on=False)")
-    # cProfile.run("compute_table('EL1', tree, 2, False, heuristics_on=True)")
+    sigs = enumerate_signatures('MH6F2', tree, 2, heuristics_on=False)
+    for sig in tqdm(sigs):
+        pass
 
     # jaxonville_plot()
-    adelphi_plot(5)
+    # adelphi_plot(5)
     # adelphi_robots_plot(4)
+
 
 
