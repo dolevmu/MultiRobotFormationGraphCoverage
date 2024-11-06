@@ -6,14 +6,14 @@ import pstats
 import io
 
 from collections import defaultdict, Counter
-from frozendict import frozendict
 from tqdm import tqdm
 
 from treelib import Tree
 from typing import Dict, NamedTuple, Optional
 
 from trees.configuration import find_root, UpArrow, DownArrow
-from trees.signature import Signature, project, enumerate_signatures, freeze_signature, get_child_key, _project, \
+from trees.parallel import parallel_enumerate_signatures
+from trees.signature import Signature, project, freeze_signature, get_child_key, _project, \
     unpack_signature, pack_signature
 from trees.traversal import Traversal, is_traversal
 
@@ -48,7 +48,7 @@ def compute_table(vertex: str,
                   num_robots: int,
                   backtrack: bool = False,
                   heuristics_on: bool = True,
-                  parallel: bool = True) -> Table:
+                  parallel: bool = False) -> Table:
     if not backtrack and PROFILING:
         pr = cProfile.Profile()
         # Start profiling
@@ -62,9 +62,9 @@ def compute_table(vertex: str,
                                                        heuristics_on=heuristics_on) for child in tree.children(vertex)}
     down_capacities = {DownArrow + child: get_down_capacity(table) for child, table in children_tables.items()}
     # Enumerate signatures at vertex:
-    signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False,
-                                               global_arrow_capacities=down_capacities,
-                                               heuristics_on=heuristics_on, parallel=parallel)
+    signatures_iterator = parallel_enumerate_signatures(vertex, tree, num_robots, raw=False,
+                                                        global_arrow_capacities=down_capacities,
+                                                        heuristics_on=heuristics_on, parallel=parallel)
 
     for packed_signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
         signature = unpack_signature(packed_signature)
@@ -116,7 +116,7 @@ def compute_table(vertex: str,
 
 
 # @profile
-def compute_table_root_dfs(tree: Tree, num_robots: int, backtrack: bool = False) -> Table:
+def compute_table_root_dfs(tree: Tree, num_robots: int, backtrack: bool = False, parallel: bool = True) -> Table:
     if PROFILING:
         pr = cProfile.Profile()
         pr.enable()
@@ -136,8 +136,8 @@ def compute_table_root_dfs(tree: Tree, num_robots: int, backtrack: bool = False)
             children_tables = {child.identifier: tables[child.identifier] for child in tree.children(vertex) if
                                child.identifier in tables}
             down_capacities = {DownArrow + child: get_down_capacity(table) for child, table in children_tables.items()}
-            signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False,
-                                                       global_arrow_capacities=down_capacities)
+            signatures_iterator = parallel_enumerate_signatures(vertex, tree, num_robots, raw=False,
+                                                       global_arrow_capacities=down_capacities, parallel=parallel)
 
             for packed_signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
                 signature = unpack_signature(packed_signature)
@@ -273,7 +273,7 @@ def fpt_compute_traversal(tree: Tree,
                           num_robots: int,
                           backtrack: bool = True,
                           heuristics_on: bool = True,
-                          parallel: bool = True) -> Optional[Traversal]:
+                          parallel: bool = False) -> Optional[Traversal]:
     table = compute_table(tree.root, tree, num_robots,
                           backtrack=backtrack, heuristics_on=heuristics_on, parallel=parallel)
     # Find traversal with minimal cost

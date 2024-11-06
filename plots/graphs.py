@@ -118,7 +118,7 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
 def adelphi_robots_plot(num_robots: int):
     tree = adelphi_tree(num_floors=5)
 
-    adelphi_df = pd.DataFrame(data={"# Floors": [1, 2, 3],
+    adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5],
                                     "# Vertices": [70, 70, 70],
                                     "# Robots": [1, 2, 3],
                                     "Traversal Time": [125, 97, 87],

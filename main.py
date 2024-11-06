@@ -6,6 +6,7 @@ from frozendict import frozendict
 from tqdm import tqdm
 
 from trees.configuration import DownArrow
+from trees.parallel import parallel_enumerate_signatures
 from trees.signature import enumerate_signatures, unpack_signature, project
 from trees.table import fpt_compute_traversal, compute_table
 from trees.traversal import print_traversal
@@ -25,16 +26,16 @@ if __name__ == '__main__':
     tree = adelphi_tree(num_floors=3)
     print_tree(tree)
 
-    # res = fpt_compute_traversal(tree, 3, parallel=True)
+    # res = fpt_compute_traversal(tree, 3, parallel=False)
     # print(res)
-
-    sigs = enumerate_signatures('MH6F2', tree, 2, heuristics_on=False, parallel=True)
-    for sig in tqdm(sigs):
-        pass
+    #
+    # sigs = parallel_enumerate_signatures('MH6F2', tree, 2, heuristics_on=False, parallel=False)
+    # for sig in tqdm(sigs):
+    #     pass
 
     # jaxonville_plot()
     # adelphi_plot(5)
-    # adelphi_robots_plot(4)
+    adelphi_robots_plot(4)
 
 
 
