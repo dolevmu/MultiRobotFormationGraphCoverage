@@ -126,7 +126,6 @@ def adelphi_robots_plot(num_robots: int):
 
 
     computed = len(adelphi_df)
-    total = num_robots - computed
     for robots in range(computed + 1, num_robots + 1):
         print(f"Robots {robots}/{num_robots}")
         start = time()
