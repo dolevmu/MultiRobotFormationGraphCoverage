@@ -116,7 +116,13 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
     plt.show()
 
 def adelphi_robots_plot(num_robots: int):
-    tree = adelphi_tree(num_floors=5)
+    tree = adelphi_tree(num_floors=4)
+
+    # adelphi_df = pd.DataFrame(data={"# Floors": [],
+    #                                 "# Vertices": [],
+    #                                 "# Robots": [],
+    #                                 "Traversal Time": [],
+    #                                 "Computation Time (sec)": []})
 
     adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5],
                                     "# Vertices": [70, 70, 70],
@@ -129,7 +135,7 @@ def adelphi_robots_plot(num_robots: int):
     for robots in range(computed + 1, num_robots + 1):
         print(f"Robots {robots}/{num_robots}")
         start = time()
-        traversal = fpt_compute_traversal(tree, robots, heuristics_on=True)
+        traversal = fpt_compute_traversal(tree, robots, heuristics_on=True, backtrack=True)
         end = time()
 
         adelphi_df.loc[len(adelphi_df)] = [5, tree.size(), robots, len(traversal), end - start]

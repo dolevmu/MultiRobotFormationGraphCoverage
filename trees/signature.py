@@ -1,8 +1,8 @@
+from memory_profiler import profile
 from collections import Counter, defaultdict
 from functools import reduce
 
 import msgpack
-import numpy as np
 
 from frozendict import frozendict
 from treelib import Tree
@@ -177,7 +177,7 @@ def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
 
     return valid_transitions, budget
 
-
+@profile
 def enumerate_signatures(vertex: str,
                          tree: Tree,
                          num_robots: int,
@@ -239,8 +239,7 @@ def enumerate_signatures(vertex: str,
 
     # We need to enumerate all possible paths in G that don't repeat an edge.
     # This corresponds to signatures where a transition does not repeat.
-    def dfs_scan_signatures(current_signature: List[FormalConfiguration],
-                            max_sig_length: int):
+    def dfs_scan_signatures(current_signature: List[FormalConfiguration], max_sig_length: int):
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
@@ -274,9 +273,15 @@ def enumerate_signatures(vertex: str,
             covered = covered | {config for config in current_signature if type(config) is str} - {UpArrow}
             next_real_configs = [config for config in next_configs
                                  if type(config) is not str and not set(config.keys()).issubset(covered)]
-            next_symbolic_configs = [config for config in next_configs if type(config) is str and not config in covered]
-            if len(next_real_configs) + len(next_symbolic_configs) > 0:
+
+            next_symbolic_configs = [config for config in next_configs if type(config) is str
+                                     and not config in covered]
+            # Heuristic: if robots can go down, do it
+            if next_symbolic_configs != [UpArrow] and next_symbolic_configs != [] and current_signature[-1] != frozendict({vertex: num_robots}):
+                next_configs = next_symbolic_configs
+            elif len(next_real_configs) + len(next_symbolic_configs) > 0:
                 next_configs = next_real_configs + next_symbolic_configs
+
 
         for next_config in next_configs:
             next_signature = current_signature[:]+[next_config]
@@ -380,6 +385,7 @@ def enumerate_signatures_given_key(signature_key: Signature,
                                  if type(config) is not str and not set(config.keys()).issubset(covered)]
             next_configs = [config for config in next_configs
                             if type(config) is str and not config in covered] + next_real_configs
+
 
         for next_config in next_configs:
             # Here, we must verify we match the signature key. One way is to check the prefix matches:

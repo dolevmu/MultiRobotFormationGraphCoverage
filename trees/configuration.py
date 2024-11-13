@@ -155,7 +155,9 @@ def split_configuration(configuration: Configuration, tree: Tree) -> Tuple[Confi
 def pack_configuration(configuration: FormalConfiguration):
     if type(configuration) is str:
         return configuration
-    return msgpack.packb(tuple(sorted(configuration.items())))
+    packed = msgpack.packb(tuple(sorted(configuration.items())))
+    assert packed, "Packed configuration is empty or None."
+    return packed
 
 
 def unpack_configuration(packed_config):

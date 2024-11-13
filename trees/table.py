@@ -6,6 +6,8 @@ import pstats
 import io
 
 from collections import defaultdict, Counter
+
+from frozendict import frozendict
 from tqdm import tqdm
 
 from treelib import Tree
@@ -14,7 +16,7 @@ from typing import Dict, NamedTuple, Optional
 from trees.configuration import find_root, UpArrow, DownArrow
 from trees.parallel import parallel_enumerate_signatures
 from trees.signature import Signature, project, freeze_signature, get_child_key, _project, \
-    unpack_signature, pack_signature
+    unpack_signature, pack_signature, enumerate_signatures
 from trees.traversal import Traversal, is_traversal
 
 PROFILING = False
@@ -62,9 +64,14 @@ def compute_table(vertex: str,
                                                        heuristics_on=heuristics_on) for child in tree.children(vertex)}
     down_capacities = {DownArrow + child: get_down_capacity(table) for child, table in children_tables.items()}
     # Enumerate signatures at vertex:
-    signatures_iterator = parallel_enumerate_signatures(vertex, tree, num_robots, raw=False,
-                                                        global_arrow_capacities=down_capacities,
-                                                        heuristics_on=heuristics_on, parallel=parallel)
+    if not parallel:
+        signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False,
+                                                   global_arrow_capacities=down_capacities,
+                                                   heuristics_on=heuristics_on)
+    else:
+        signatures_iterator = parallel_enumerate_signatures(vertex, tree, num_robots, raw=False,
+                                                            global_arrow_capacities=down_capacities,
+                                                            heuristics_on=heuristics_on, parallel=True)
 
     for packed_signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
         signature = unpack_signature(packed_signature)
@@ -112,6 +119,7 @@ def compute_table(vertex: str,
         print(f"Profiling results for vertex {vertex}:\n")
         print(s.getvalue())
 
+    print(vertex, len(table))
     return table
 
 
@@ -283,6 +291,8 @@ def fpt_compute_traversal(tree: Tree,
         if table_entry.cost < traversal_time:
             traversal_time = table_entry.cost
             root_table_entry = table_entry
+
+    assert root_table_entry is not None
 
     if root_table_entry is None:
         return None
