@@ -119,7 +119,6 @@ def compute_table(vertex: str,
         print(f"Profiling results for vertex {vertex}:\n")
         print(s.getvalue())
 
-    print(vertex, len(table))
     return table
 
 
