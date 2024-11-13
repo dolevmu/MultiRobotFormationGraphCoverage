@@ -1,4 +1,4 @@
-# from memory_profiler import profile
+from memory_profiler import profile
 import gc
 import hashlib
 import cProfile
@@ -44,7 +44,7 @@ def get_down_capacity(table: Table) -> int:
     return max_capacity
 
 
-# @profile
+@profile
 def compute_table(vertex: str,
                   tree: Tree,
                   num_robots: int,
