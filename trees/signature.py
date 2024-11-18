@@ -240,6 +240,32 @@ def enumerate_signatures(vertex: str,
     # We need to enumerate all possible paths in G that don't repeat an edge.
     # This corresponds to signatures where a transition does not repeat.
     def dfs_scan_signatures(current_signature: List[FormalConfiguration], max_sig_length: int):
+        sig0 = [UpArrow,
+                frozendict({'EL1': 1, 'G': 1, 'EL2': 1}),
+                frozendict({'EL1': 1, 'EL2': 1, 'SH2': 1}),
+                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
+                DownArrow + 'SH2',
+                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
+                frozendict({'EL3': 1, 'EL2': 1, 'SH2': 1}),
+                frozendict({'SH3': 1, 'EL3': 1, 'EL2': 1}),
+                DownArrow + 'EL3']
+        if current_signature == sig0:
+            print('here')
+
+        sig1 = [UpArrow,
+                frozendict({'EL1': 1, 'EL2': 1, 'SH2': 1}),
+                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
+                frozendict({'SH2': 1, 'C2': 1, 'MH1F2': 1}),
+                DownArrow + 'C2',
+                frozendict({'SH2': 1, 'C2': 1, 'MH1F2': 1}),
+                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
+                frozendict({'EL3': 1, 'EL2': 1, 'SH2': 1}),
+                UpArrow]
+        if current_signature == sig1:
+            print('here')
+
+
+
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
@@ -271,17 +297,22 @@ def enumerate_signatures(vertex: str,
         elif heuristics_on and num_robots > 1:
             # Heuristic: if didn't search all children, must cover a new node *when possible*
             covered = covered | {config for config in current_signature if type(config) is str} - {UpArrow}
+            to_cover = set(tree.subtree(vertex).nodes) - covered
             next_real_configs = [config for config in next_configs
-                                 if type(config) is not str and not set(config.keys()).issubset(covered)]
+                                 if type(config) is not str and (set(config.keys()) & to_cover)]
 
             next_symbolic_configs = [config for config in next_configs if type(config) is str
-                                     and not config in covered]
-            # Heuristic: if robots can go down, do it
-            if next_symbolic_configs != [UpArrow] and next_symbolic_configs != [] and current_signature[-1] != frozendict({vertex: num_robots}):
-                next_configs = next_symbolic_configs
-            elif len(next_real_configs) + len(next_symbolic_configs) > 0:
+                                     and not config in covered and config != UpArrow]
+
+            if len(next_real_configs) + len(next_symbolic_configs) > 0:
                 next_configs = next_real_configs + next_symbolic_configs
 
+            # Heuristic: if robots can go down, and there is enough ground to cover, do it
+            if next_symbolic_configs:
+                big_children = [child for child in next_symbolic_configs
+                                if tree.subtree(child[1:]).size() >= num_robots]
+                if big_children:
+                    next_configs = next_symbolic_configs
 
         for next_config in next_configs:
             next_signature = current_signature[:]+[next_config]

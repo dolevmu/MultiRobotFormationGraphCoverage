@@ -44,7 +44,7 @@ def get_down_capacity(table: Table) -> int:
     return max_capacity
 
 
-@profile
+# @profile
 def compute_table(vertex: str,
                   tree: Tree,
                   num_robots: int,
@@ -75,6 +75,42 @@ def compute_table(vertex: str,
 
     for packed_signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
         signature = unpack_signature(packed_signature)
+
+        if signature == (UpArrow,
+                         frozendict({'EL1': 1, 'G': 1, 'EL2': 1}),
+                         frozendict({'EL1': 1, 'EL2': 1, 'SH2': 1}),
+                         frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
+                         DownArrow + 'SH2',
+                         frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
+                         frozendict({'EL3': 1, 'EL2': 1, 'SH2': 1}),
+                         frozendict({'SH3': 1, 'EL3': 1, 'EL2': 1}),
+                         DownArrow + 'EL3'
+                         ):
+            print('here')
+
+        sig1 = (UpArrow,
+                frozendict({'EL1': 1, 'EL2': 1, 'SH2': 1}),
+                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
+                frozendict({'SH2': 1, 'C2': 1, 'MH1F2': 1}),
+                DownArrow + 'C2',
+                frozendict({'SH2': 1, 'C2': 1, 'MH1F2': 1}),
+                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
+                frozendict({'EL3': 1, 'EL2': 1, 'SH2': 1}),
+                UpArrow)
+        if signature == sig1:
+            print('here')
+
+        sig2 = (UpArrow,
+                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
+                frozendict({'SH2': 1, 'C2': 1, 'MH1F2': 1}),
+                frozendict({'C2': 1, 'MH1F2': 1, 'R201': 1}),
+                DownArrow + 'MH1F2',
+                frozendict({'C2': 1, 'MH1F2': 1, 'MH2F2': 1}),
+                frozendict({'SH2': 1, 'C2': 1, 'MH1F2': 1}),
+                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
+                UpArrow)
+        if signature == sig2:
+            print('here')
 
         matched_keys = True
         cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
@@ -119,6 +155,7 @@ def compute_table(vertex: str,
         print(f"Profiling results for vertex {vertex}:\n")
         print(s.getvalue())
 
+    print(vertex, len(table))
     return table
 
 
