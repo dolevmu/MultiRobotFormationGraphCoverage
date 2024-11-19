@@ -418,15 +418,15 @@ def enumerate_signatures_given_child_tables(children_tables: Dict[str, Table],
 
             if len(next_real_configs) + len(next_symbolic_configs) > 0:
                 next_configs = next_real_configs + next_symbolic_configs
-            # elif num_robots > 2:
-            #     return # We can always avoid that. If we don't we will get a lot of garbage sigs.
+            elif num_robots > 2:
+                return # We can always avoid that. If we don't we will get a lot of garbage sigs.
 
-            # Heuristic: if robots can go down, and there is enough ground to cover, do it
-            # if next_symbolic_configs:
-            #     big_children = [child for child in next_symbolic_configs
-            #                     if len(tree.expand_tree(child[1:])) >= num_robots + 1]
-            #     if big_children:
-            #         next_configs = big_children
+            # Heuristic: if robots can go down in two ways, and there is enough ground to cover, do it
+            if next_symbolic_configs:
+                big_children = [child for child in next_symbolic_configs
+                                if len(tree.expand_tree(child[1:])) >= num_robots]
+                if len(big_children) > 1:
+                    next_configs = big_children
 
         for next_config in next_configs:
             next_signature = current_signature[:]+[next_config]

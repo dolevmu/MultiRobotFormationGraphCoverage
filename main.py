@@ -18,8 +18,8 @@ from plots.graphs import jaxonville_plot, adelphi_plot, adelphi_robots_plot
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    tree = example_tree()
-    # tree = hard_example_tree()
+    # tree = example_tree()
+    tree = hard_example_tree()
     # tree = jaxsonville_tree(num_floors=5)
     # tree = adelphi_tree(num_floors=3)
     print_tree(tree)
