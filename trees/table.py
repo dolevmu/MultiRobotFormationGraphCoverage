@@ -4,19 +4,19 @@ import hashlib
 import cProfile
 import pstats
 import io
+import tracemalloc
 
 from collections import defaultdict, Counter
 
-from frozendict import frozendict
 from tqdm import tqdm
 
 from treelib import Tree
-from typing import Dict, NamedTuple, Optional
+from typing import Optional
 
 from trees.configuration import find_root, UpArrow, DownArrow
 from trees.parallel import parallel_enumerate_signatures
-from trees.signature import Signature, project, freeze_signature, get_child_key, _project, \
-    unpack_signature, pack_signature, enumerate_signatures
+from trees.signature import project, freeze_signature, get_child_key, _project, \
+    unpack_signature, pack_signature, enumerate_signatures, TableEntry, Table, enumerate_signatures_given_child_tables
 from trees.traversal import Traversal, is_traversal
 
 PROFILING = False
@@ -24,14 +24,7 @@ PROFILING = False
 tables = {}
 
 
-class TableEntry(NamedTuple):
-    vertex: str
-    signature: Signature
-    child_signatures: Dict[str, Signature]
-    cost: int
 
-
-Table = Dict[Signature, TableEntry]
 
 
 def get_down_capacity(table: Table) -> int:
@@ -51,11 +44,6 @@ def compute_table(vertex: str,
                   backtrack: bool = False,
                   heuristics_on: bool = True,
                   parallel: bool = False) -> Table:
-    if not backtrack and PROFILING:
-        pr = cProfile.Profile()
-        # Start profiling
-        pr.enable()
-
     parent = vertex if vertex == tree.root else tree.parent(vertex).identifier
     table = defaultdict(lambda: TableEntry(vertex=vertex, signature=(), child_signatures={}, cost=2*tree.size()))
 
@@ -65,9 +53,14 @@ def compute_table(vertex: str,
     down_capacities = {DownArrow + child: get_down_capacity(table) for child, table in children_tables.items()}
     # Enumerate signatures at vertex:
     if not parallel:
-        signatures_iterator = enumerate_signatures(vertex, tree, num_robots, raw=False,
+        signatures_iterator = enumerate_signatures(vertex, tree, num_robots,
+                                                   raw=False,
                                                    global_arrow_capacities=down_capacities,
                                                    heuristics_on=heuristics_on)
+        # signatures_iterator = enumerate_signatures_given_child_tables(children_tables, vertex, tree, num_robots,
+        #                                                               raw=False,
+        #                                                               global_arrow_capacities=down_capacities,
+        #                                                               heuristics_on=heuristics_on)
     else:
         signatures_iterator = parallel_enumerate_signatures(vertex, tree, num_robots, raw=False,
                                                             global_arrow_capacities=down_capacities,
@@ -76,48 +69,13 @@ def compute_table(vertex: str,
     for packed_signature in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
         signature = unpack_signature(packed_signature)
 
-        if signature == (UpArrow,
-                         frozendict({'EL1': 1, 'G': 1, 'EL2': 1}),
-                         frozendict({'EL1': 1, 'EL2': 1, 'SH2': 1}),
-                         frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
-                         DownArrow + 'SH2',
-                         frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
-                         frozendict({'EL3': 1, 'EL2': 1, 'SH2': 1}),
-                         frozendict({'SH3': 1, 'EL3': 1, 'EL2': 1}),
-                         DownArrow + 'EL3'
-                         ):
-            print('here')
-
-        sig1 = (UpArrow,
-                frozendict({'EL1': 1, 'EL2': 1, 'SH2': 1}),
-                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
-                frozendict({'SH2': 1, 'C2': 1, 'MH1F2': 1}),
-                DownArrow + 'C2',
-                frozendict({'SH2': 1, 'C2': 1, 'MH1F2': 1}),
-                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
-                frozendict({'EL3': 1, 'EL2': 1, 'SH2': 1}),
-                UpArrow)
-        if signature == sig1:
-            print('here')
-
-        sig2 = (UpArrow,
-                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
-                frozendict({'SH2': 1, 'C2': 1, 'MH1F2': 1}),
-                frozendict({'C2': 1, 'MH1F2': 1, 'R201': 1}),
-                DownArrow + 'MH1F2',
-                frozendict({'C2': 1, 'MH1F2': 1, 'MH2F2': 1}),
-                frozendict({'SH2': 1, 'C2': 1, 'MH1F2': 1}),
-                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
-                UpArrow)
-        if signature == sig2:
-            print('here')
-
         matched_keys = True
         cost = sum(find_root(config, tree) == vertex for config in signature if type(config) is not str)
         child_signatures = {}
 
         for child in tree.children(vertex):
             child_key = hashlib.sha256(pack_signature(freeze_signature(get_child_key(vertex, child.identifier, signature, tree)))).hexdigest()
+            # child_key = pack_signature(freeze_signature(get_child_key(vertex, child.identifier, signature, tree)))
             if not child_key in children_tables[child.identifier]:
                 matched_keys = False
                 break
@@ -130,6 +88,7 @@ def compute_table(vertex: str,
 
         # Add signature to the table
         signature_key = hashlib.sha256(pack_signature(freeze_signature(project(parent, signature, tree)))).hexdigest()
+        # signature_key = pack_signature(freeze_signature(project(parent, signature, tree)))
         if cost < table[signature_key].cost:
             # If found a signature with a smaller key, update table
             # TODO: we may have an even better condition: just consider configs before and after '↑' as the key
@@ -141,19 +100,6 @@ def compute_table(vertex: str,
         gc.collect()
     del down_capacities
     gc.collect()
-
-    if not backtrack and PROFILING:
-        # Stop profiling
-        pr.disable()
-
-        # Print profiling stats to a string
-        s = io.StringIO()
-        ps = pstats.Stats(pr, stream=s).sort_stats('cumulative')
-        ps.print_stats(20)  # Print top 20 functions by cumulative time
-
-        # Output the profiling results to console
-        print(f"Profiling results for vertex {vertex}:\n")
-        print(s.getvalue())
 
     print(vertex, len(table))
     return table
@@ -202,8 +148,10 @@ def compute_table_root_dfs(tree: Tree, num_robots: int, backtrack: bool = False,
                 if not matched_keys:
                     continue
 
-                signature_key = hashlib.sha256(
-                    pack_signature(freeze_signature(project(parent, signature, tree)))).hexdigest()
+                # signature_key = hashlib.sha256(
+                #     pack_signature(freeze_signature(project(parent, signature, tree)))).hexdigest()
+                signature_key = freeze_signature(project(parent, signature, tree))
+
                 if cost < table[signature_key].cost:
                     table[signature_key] = TableEntry(vertex, packed_signature, child_signatures, cost)
 

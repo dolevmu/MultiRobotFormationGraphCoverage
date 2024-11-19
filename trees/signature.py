@@ -1,3 +1,5 @@
+import hashlib
+
 from memory_profiler import profile
 from collections import Counter, defaultdict
 from functools import reduce
@@ -6,7 +8,7 @@ import msgpack
 
 from frozendict import frozendict
 from treelib import Tree
-from typing import Tuple, Dict, Set, List, Optional, Iterator
+from typing import Tuple, Dict, Set, List, Optional, Iterator, NamedTuple
 
 from trees.configuration import is_connected, enumerate_configurations, find_root, UpArrow, DownArrow, \
     FormalConfiguration, FrozenFormalConfiguration, FormalTransition, pack_configuration, unpack_configuration
@@ -15,6 +17,14 @@ from trees.transition import is_transition, enumerate_transitions, is_up_transit
 Signature = Tuple[FormalConfiguration, ...]
 FrozenSignature = Tuple[FrozenFormalConfiguration, ...]
 
+class TableEntry(NamedTuple):
+    vertex: str
+    signature: Signature
+    child_signatures: Dict[str, Signature]
+    cost: int
+
+
+Table = Dict[Signature, TableEntry]
 
 def freeze_signature(signature: Signature) -> FrozenSignature:
     return tuple(config if type(config) is str else frozendict(config)
@@ -31,7 +41,7 @@ def _project(vertex: str, signature: Signature, tree: Tree) -> Signature:
             raw_signature.append(configuration)
         elif configuration.get(vertex, 0) > 0:
             raw_signature.append(configuration)
-        elif set(configuration.keys()).issubset(tree.subtree(vertex).nodes):
+        elif set(configuration.keys()).issubset(set(tree.expand_tree(vertex))):
             configuration_root = find_root(configuration, tree)
             ancestors = {tree.ancestor(configuration_root, level).identifier
                          for level in range(tree.depth(vertex)+1, tree.depth(configuration_root))} | {configuration_root}
@@ -90,8 +100,8 @@ def is_signature(signature: Signature, vertex: str, tree: Tree) -> bool:
     assert all([is_connected(config, tree) for config in configurations]), f"Configurations must be connected."
 
     # Verify transitions are correct
-    successors = {successor for successor in tree.subtree(vertex).nodes}
-    ancestors = {ancestor for ancestor in tree.nodes if ancestor not in tree.subtree(vertex).nodes} | {vertex}
+    successors = set(tree.expand_tree(vertex))
+    ancestors = {ancestor for ancestor in tree.nodes if ancestor not in set(tree.expand_tree(vertex))} | {vertex}
     for config1, config2 in zip(configurations, configurations[1:]):
         if type(config1) is Counter and type(config2) is Counter:
             assert is_transition((config1, config2), tree), f"Invalid transitions found."
@@ -128,7 +138,7 @@ def compute_signature_cost(vertex: str, signature: Signature, tree: Tree) -> int
 
 def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
                           ) -> Tuple[Dict[FormalConfiguration, Set[FormalConfiguration]], Dict[FormalTransition, int]]:
-    inside_vertex = tree.subtree(vertex).nodes.keys()
+    inside_vertex = set(tree.expand_tree(vertex))
     outside_vertex = tree.nodes.keys() - inside_vertex
 
     # Pre-computation: get all configurations that occupy vertex
@@ -177,7 +187,7 @@ def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
 
     return valid_transitions, budget
 
-@profile
+# @profile # won't work for iterator, need to wrap with a function
 def enumerate_signatures(vertex: str,
                          tree: Tree,
                          num_robots: int,
@@ -185,7 +195,6 @@ def enumerate_signatures(vertex: str,
                          global_arrow_capacities: Optional[Dict[str, int]] = None,
                          max_sig_length: Optional[int] = None,
                          heuristics_on: bool = True) -> Iterator[Signature]:
-
     # Let G=(V,E) be the following graph:
     # 1. V = {Configurations that occupy vertex} + {'↑'} + {Configurations projected to '↓'} (raw=True)
     #                                                    + {'↓'} (raw=False)
@@ -240,32 +249,6 @@ def enumerate_signatures(vertex: str,
     # We need to enumerate all possible paths in G that don't repeat an edge.
     # This corresponds to signatures where a transition does not repeat.
     def dfs_scan_signatures(current_signature: List[FormalConfiguration], max_sig_length: int):
-        sig0 = [UpArrow,
-                frozendict({'EL1': 1, 'G': 1, 'EL2': 1}),
-                frozendict({'EL1': 1, 'EL2': 1, 'SH2': 1}),
-                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
-                DownArrow + 'SH2',
-                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
-                frozendict({'EL3': 1, 'EL2': 1, 'SH2': 1}),
-                frozendict({'SH3': 1, 'EL3': 1, 'EL2': 1}),
-                DownArrow + 'EL3']
-        if current_signature == sig0:
-            print('here')
-
-        sig1 = [UpArrow,
-                frozendict({'EL1': 1, 'EL2': 1, 'SH2': 1}),
-                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
-                frozendict({'SH2': 1, 'C2': 1, 'MH1F2': 1}),
-                DownArrow + 'C2',
-                frozendict({'SH2': 1, 'C2': 1, 'MH1F2': 1}),
-                frozendict({'EL2': 1, 'SH2': 1, 'C2': 1}),
-                frozendict({'EL3': 1, 'EL2': 1, 'SH2': 1}),
-                UpArrow]
-        if current_signature == sig1:
-            print('here')
-
-
-
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
@@ -289,7 +272,7 @@ def enumerate_signatures(vertex: str,
         covered = set(reduce(set.union, [config.keys() for config in current_signature if type(config) is not str], set()))
         if all(
                 DownArrow + child.identifier in current_signature
-                or set(tree.subtree(child.identifier).nodes.keys()).issubset(covered)
+                or set(tree.expand_tree(child.identifier)).issubset(covered)
                 for child in tree.children(vertex)):
             # WLOG, due to collapsability, if searched all children, only go up
             next_configs = [config for config in next_configs
@@ -297,7 +280,7 @@ def enumerate_signatures(vertex: str,
         elif heuristics_on and num_robots > 1:
             # Heuristic: if didn't search all children, must cover a new node *when possible*
             covered = covered | {config for config in current_signature if type(config) is str} - {UpArrow}
-            to_cover = set(tree.subtree(vertex).nodes) - covered
+            to_cover = set(tree.expand_tree(vertex)) - covered
             next_real_configs = [config for config in next_configs
                                  if type(config) is not str and (set(config.keys()) & to_cover)]
 
@@ -306,13 +289,15 @@ def enumerate_signatures(vertex: str,
 
             if len(next_real_configs) + len(next_symbolic_configs) > 0:
                 next_configs = next_real_configs + next_symbolic_configs
+            elif num_robots > 2:
+                return # We can always avoid that. If we don't we will get a lot of garbage sigs.
 
             # Heuristic: if robots can go down, and there is enough ground to cover, do it
-            if next_symbolic_configs:
-                big_children = [child for child in next_symbolic_configs
-                                if tree.subtree(child[1:]).size() >= num_robots]
-                if big_children:
-                    next_configs = next_symbolic_configs
+            # if next_symbolic_configs:
+            #     big_children = [child for child in next_symbolic_configs
+            #                     if len(tree.expand_tree(child[1:])) >= num_robots]
+            #     if big_children:
+            #         next_configs = next_symbolic_configs
 
         for next_config in next_configs:
             next_signature = current_signature[:]+[next_config]
@@ -322,32 +307,40 @@ def enumerate_signatures(vertex: str,
                                    max_sig_length=max_sig_length)
 
 
-def enumerate_signatures_given_key(signature_key: Signature,
-                                   vertex: str,
-                                   tree: Tree,
-                                   num_robots: int,
-                                   raw: bool,
-                                   global_arrow_capacities: Optional[Dict[str, int]] = None,
-                                   max_sig_length: Optional[int] = None,
-                                   heuristics_on: bool = True) -> Iterator[Signature]:
-
+def enumerate_signatures_given_child_tables(children_tables: Dict[str, Table],
+                                            vertex: str,
+                                            tree: Tree,
+                                            num_robots: int,
+                                            raw: bool,
+                                            global_arrow_capacities: Optional[Dict[str, int]] = None,
+                                            max_sig_length: Optional[int] = None,
+                                            heuristics_on: bool = True) -> Iterator[Signature]:
+    # Let G=(V,E) be the following graph:
+    # 1. V = {Configurations that occupy vertex} + {'↑'} + {Configurations projected to '↓'} (raw=True)
+    #                                                    + {'↓'} (raw=False)
+    # 2. E = an edge exists iff it is a valid transition
+    # G is represented with an adjacency list valid_transitions:
     valid_transitions, budget = signatures_precompute(vertex, tree, num_robots, raw=raw)
 
+    # down_capacity[vertex] specifies the maximal number of down arrows per child, overall.
+    # E.g., due to collapsability, if child is a leaf in tree, down_capacity[child]=1, and there is only one transition
+    # to this child.
     if global_arrow_capacities is None:
         global_arrow_capacities = dict()
         for child in tree.children(vertex):
             global_arrow_capacities[DownArrow + child.identifier] = len(valid_transitions[DownArrow + child.identifier])
         if tree.parent(vertex):
-            global_arrow_capacities[UpArrow] = len(valid_transitions[UpArrow])
+            global_arrow_capacities[UpArrow] = len(valid_transitions[UpArrow]) + 1
+
     if tree.parent(vertex) and UpArrow not in global_arrow_capacities:
-        global_arrow_capacities[UpArrow] = len(valid_transitions[UpArrow])
+        global_arrow_capacities[UpArrow] = len(valid_transitions[UpArrow]) + 1
 
     start_config = frozendict(Counter({vertex: num_robots})) if vertex == tree.root else UpArrow
 
     if max_sig_length is None:
         max_sig_length = tree.size()  # always holds
 
-    if heuristics_on or True:
+    if heuristics_on:  # or True:
         max_sig_length = min(max_sig_length, 8)
 
     def compute_used_transitions(current_signature: List[FormalConfiguration]) -> Set[FormalConfiguration]:
@@ -375,10 +368,7 @@ def enumerate_signatures_given_key(signature_key: Signature,
 
     # We need to enumerate all possible paths in G that don't repeat an edge.
     # This corresponds to signatures where a transition does not repeat.
-    def dfs_scan_signatures(signature_key: Signature,
-                            current_signature: List[FormalConfiguration],
-                            max_sig_length: int):
-
+    def dfs_scan_signatures(current_signature: List[FormalConfiguration], max_sig_length: int):
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
@@ -389,14 +379,21 @@ def enumerate_signatures_given_key(signature_key: Signature,
             return
 
         if any(type(config) is not str for config in current_signature):
-            # Add signature only if it visits vertex
-            parent = vertex if vertex == tree.root else tree.parent(vertex).identifier
-            if project(parent, tuple(current_signature), tree) == signature_key:
+            # Add signature only if has a real config.
+            # Also check it matches all child tables if there are any.
+
+            matched_keys = True
+            for child in tree.children(vertex):
+                child_key = pack_signature(freeze_signature(get_child_key(vertex, child.identifier, tuple(current_signature), tree)))
+                if child_key not in children_tables[child.identifier]:
+                    matched_keys = False
+                    break
+            if matched_keys:
                 yield pack_signature(tuple(current_signature))
 
-            # Heuristic: only get out once
-            if current_signature.count(UpArrow) == 2 and heuristics_on:
-                return
+        # Heuristic: only get out once
+        if current_signature.count(UpArrow) == 2 and heuristics_on:
+            return
 
         used_transitions = compute_used_transitions(current_signature)
         next_configs = valid_transitions[current_signature[-1]] - used_transitions
@@ -404,29 +401,39 @@ def enumerate_signatures_given_key(signature_key: Signature,
         covered = set(reduce(set.union, [config.keys() for config in current_signature if type(config) is not str], set()))
         if all(
                 DownArrow + child.identifier in current_signature
-                or set(tree.subtree(child.identifier).nodes.keys()).issubset(covered)
+                or set(tree.expand_tree(child.identifier)).issubset(covered)
                 for child in tree.children(vertex)):
             # WLOG, due to collapsability, if searched all children, only go up
             next_configs = [config for config in next_configs
                             if is_up_transition(vertex, (current_signature[-1], config), tree, valid_transitions[current_signature[-1]])]
-        elif heuristics_on:
-            # Heuristic: if didn't search all children, must cover a new node
+        elif heuristics_on and num_robots > 1:
+            # Heuristic: if didn't search all children, must cover a new node *when possible*
             covered = covered | {config for config in current_signature if type(config) is str} - {UpArrow}
+            to_cover = set(tree.expand_tree(vertex)) - covered
             next_real_configs = [config for config in next_configs
-                                 if type(config) is not str and not set(config.keys()).issubset(covered)]
-            next_configs = [config for config in next_configs
-                            if type(config) is str and not config in covered] + next_real_configs
+                                 if type(config) is not str and (set(config.keys()) & to_cover)]
 
+            next_symbolic_configs = [config for config in next_configs if type(config) is str
+                                     and not config in covered and config != UpArrow]
+
+            if len(next_real_configs) + len(next_symbolic_configs) > 0:
+                next_configs = next_real_configs + next_symbolic_configs
+            # elif num_robots > 2:
+            #     return # We can always avoid that. If we don't we will get a lot of garbage sigs.
+
+            # Heuristic: if robots can go down, and there is enough ground to cover, do it
+            # if next_symbolic_configs:
+            #     big_children = [child for child in next_symbolic_configs
+            #                     if len(tree.expand_tree(child[1:])) >= num_robots + 1]
+            #     if big_children:
+            #         next_configs = big_children
 
         for next_config in next_configs:
-            # Here, we must verify we match the signature key. One way is to check the prefix matches:
             next_signature = current_signature[:]+[next_config]
-            next_partial_key = project(vertex, tuple(next_signature), tree)
-            if next_partial_key == tuple(list(signature_key)[:len(next_partial_key)]):
-                yield from dfs_scan_signatures(signature_key, next_signature, max_sig_length)
+            yield from dfs_scan_signatures(next_signature, max_sig_length)
 
-    yield from dfs_scan_signatures(signature_key, [start_config], max_sig_length=max_sig_length)
 
+    yield from dfs_scan_signatures([start_config], max_sig_length=max_sig_length)
 
 def pack_signature(signature: Signature):
     return msgpack.packb(tuple(pack_configuration(config) for config in signature))
