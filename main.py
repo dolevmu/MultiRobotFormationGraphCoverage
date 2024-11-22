@@ -25,7 +25,7 @@ if __name__ == '__main__':
     print_tree(tree)
 
     # 1_006_514
-    # sigs = enumerate_signatures('MH6F2', tree, 3, heuristics_on=False)
+    # sigs = enumerate_signatures('', tree, 3, heuristics_on=True)
     # counter = 0
     # for sig in tqdm(sigs):
     #     counter += 1

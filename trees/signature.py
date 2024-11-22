@@ -221,7 +221,7 @@ def enumerate_signatures(vertex: str,
         max_sig_length = tree.size()  # always holds
 
     if heuristics_on:
-        max_sig_length = min(max_sig_length, 10)
+        max_sig_length = min(max_sig_length, 8)
 
     def compute_used_transitions(current_signature: List[FormalConfiguration]) -> Set[FormalConfiguration]:
         used_transitions = set()
@@ -249,6 +249,16 @@ def enumerate_signatures(vertex: str,
     # We need to enumerate all possible paths in G that don't repeat an edge.
     # This corresponds to signatures where a transition does not repeat.
     def dfs_scan_signatures(current_signature: List[FormalConfiguration], max_sig_length: int):
+        if current_signature == [frozendict({'': 3}),
+                                 frozendict({'': 1, '2': 1, '0': 1}),
+                                 frozendict({'': 1, '0': 1, '00': 1}),
+                                 DownArrow + '0',
+                                 frozendict({'': 2, '0': 1}),
+                                 frozendict({'': 1, '1': 2}),
+                                 DownArrow + '1'
+                                 ]:
+            print('here')
+
         if len(tree.children(vertex)) == 0 and sum(type(config) is not str for config in current_signature) > 1:
             # If vertex is a leaf, we can assume w.l.o.g that it is visited precisely once.
             # Indeed, connected configurations are collapsible.
@@ -286,9 +296,15 @@ def enumerate_signatures(vertex: str,
                 # This is not a heuristic, due to collapsability
                 next_real_configs = [config for config in next_configs
                                      if type(config) is not str and visited.issubset(config)]
-                next_symbolic_configs = []  # Due to connectivity must be empty
-                if not next_real_configs:  # True WLOG. If can't go further in parallel, could have avoided it altogether.
-                    return
+                next_symbolic_configs = []
+                if len(visited) > 1:
+                    if not next_real_configs:
+                        # If can't go further in parallel, could have avoided visiting the two to begin with.
+                        return
+                else:
+                    child = DownArrow + list(visited)[0]
+                    if child in next_configs:
+                        next_symbolic_configs = [child]
 
             # Heuristic: if didn't search all children, must cover a new node *when possible*
             else:
@@ -356,7 +372,7 @@ def enumerate_signatures_given_child_tables(children_tables: Dict[str, Table],
         max_sig_length = tree.size()  # always holds
 
     if heuristics_on:
-        max_sig_length = min(max_sig_length, 8)
+        max_sig_length = min(max_sig_length, 9)
 
     def compute_used_transitions(current_signature: List[FormalConfiguration]) -> Set[FormalConfiguration]:
         used_transitions = set()
