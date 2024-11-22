@@ -220,8 +220,8 @@ def enumerate_signatures(vertex: str,
     if max_sig_length is None:
         max_sig_length = tree.size()  # always holds
 
-    if heuristics_on:  # or True:
-        max_sig_length = min(max_sig_length, 8)
+    if heuristics_on:
+        max_sig_length = min(max_sig_length, 10)
 
     def compute_used_transitions(current_signature: List[FormalConfiguration]) -> Set[FormalConfiguration]:
         used_transitions = set()
@@ -254,8 +254,6 @@ def enumerate_signatures(vertex: str,
             # Indeed, connected configurations are collapsible.
             return
         if max_sig_length < len([config for config in current_signature if type(config) is not str]):
-            # No need to look at signatures longer than the upper bound
-            # A tight bound for k=2 is tree.size(): consider a star graph
             return
 
         if any(type(config) is not str for config in current_signature):
@@ -278,26 +276,43 @@ def enumerate_signatures(vertex: str,
             next_configs = [config for config in next_configs
                             if is_up_transition(vertex, (current_signature[-1], config), tree, valid_transitions[current_signature[-1]])]
         elif heuristics_on and num_robots > 1:
-            # Heuristic: if didn't search all children, must cover a new node *when possible*
-            covered = covered | {config for config in current_signature if type(config) is str} - {UpArrow}
-            to_cover = set(tree.expand_tree(vertex)) - covered
-            next_real_configs = [config for config in next_configs
-                                 if type(config) is not str and (set(config.keys()) & to_cover)]
+            # Find all children that are partly covered
+            visited = {child.identifier for child in tree.children(vertex)
+                       if DownArrow + child.identifier not in current_signature and
+                       not set(tree.expand_tree(child.identifier)).issubset(covered)
+                       and child.identifier in covered}
 
-            next_symbolic_configs = [config for config in next_configs if type(config) is str
-                                     and not config in covered and config != UpArrow]
+            if visited:  # If decided to search two children in parallel, must follow this route
+                # This is not a heuristic, due to collapsability
+                next_real_configs = [config for config in next_configs
+                                     if type(config) is not str and visited.issubset(config)]
+                next_symbolic_configs = []  # Due to connectivity must be empty
+                if not next_real_configs:  # True WLOG. If can't go further in parallel, could have avoided it altogether.
+                    return
+
+            # Heuristic: if didn't search all children, must cover a new node *when possible*
+            else:
+                covered = covered | {config for config in current_signature if type(config) is str} - {UpArrow}
+                to_cover = set(tree.expand_tree(vertex)) - covered
+                next_real_configs = [config for config in next_configs
+                                     if type(config) is not str and (set(config.keys()) & to_cover)]
+                next_symbolic_configs = [config for config in next_configs if type(config) is str
+                                         and not config in covered and config != UpArrow]
 
             if len(next_real_configs) + len(next_symbolic_configs) > 0:
                 next_configs = next_real_configs + next_symbolic_configs
+
             elif num_robots > 2:
                 return # We can always avoid that. If we don't we will get a lot of garbage sigs.
 
             # Heuristic: if robots can go down, and there is enough ground to cover, do it
             # if next_symbolic_configs:
-            #     big_children = [child for child in next_symbolic_configs
-            #                     if len(tree.expand_tree(child[1:])) >= num_robots]
+            #     big_children = list(sorted(child for child in next_symbolic_configs
+            #                                if len(set(tree.expand_tree(child[1:]))) >= num_robots))
             #     if big_children:
-            #         next_configs = next_symbolic_configs
+            #         # Explore a child
+            #         big_child = big_children[0]
+            #         next_configs = [big_child] + [config for config in next_real_configs if big_child[1:] in config]
 
         for next_config in next_configs:
             next_signature = current_signature[:]+[next_config]
@@ -340,7 +355,7 @@ def enumerate_signatures_given_child_tables(children_tables: Dict[str, Table],
     if max_sig_length is None:
         max_sig_length = tree.size()  # always holds
 
-    if heuristics_on:  # or True:
+    if heuristics_on:
         max_sig_length = min(max_sig_length, 8)
 
     def compute_used_transitions(current_signature: List[FormalConfiguration]) -> Set[FormalConfiguration]:
@@ -421,11 +436,11 @@ def enumerate_signatures_given_child_tables(children_tables: Dict[str, Table],
             elif num_robots > 2:
                 return # We can always avoid that. If we don't we will get a lot of garbage sigs.
 
-            # Heuristic: if robots can go down in two ways, and there is enough ground to cover, do it
+            # Heuristic: if robots can go down, and there is enough ground to cover, do it
             if next_symbolic_configs:
                 big_children = [child for child in next_symbolic_configs
                                 if len(tree.expand_tree(child[1:])) >= num_robots]
-                if len(big_children) > 1:
+                if big_children:
                     next_configs = big_children
 
         for next_config in next_configs:

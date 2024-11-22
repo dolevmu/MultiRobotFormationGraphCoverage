@@ -80,10 +80,12 @@ def is_up_transition(vertex: str, transition: FormalTransition, tree: Tree, vali
         return True
 
     # check that we only go up
-    for v in set(transition[0].keys()) & set(tree.expand_tree(vertex)):
+    # for v in set(transition[0].keys()) & set(tree.expand_tree(vertex)):
+    for v in tree.expand_tree(vertex):
         expected = sum(transition[0].get(child.identifier, 0) for child in tree.children(v))
         if transition[1].get(v, 0) != expected:
             return False
+
 
     return True
 
