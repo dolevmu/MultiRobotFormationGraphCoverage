@@ -49,6 +49,8 @@ def jaxonville_plot():
     plt.show()
 
 
+
+
 def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
 
     # adelphi_df = pd.DataFrame(data={"# Floors": [],
@@ -115,44 +117,43 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
     plt.legend()  # title="Heuristics")
     plt.show()
 
-def adelphi_robots_plot(num_robots: int):
-    tree = adelphi_tree(num_floors=5)
-
+def adelphi_robots_plot(num_robots: int, num_floors: int = 5):
     # adelphi_df = pd.DataFrame(data={"# Floors": [],
     #                                 "# Vertices": [],
     #                                 "# Robots": [],
     #                                 "Traversal Time": [],
     #                                 "Computation Time (sec)": []})
 
-    adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5],
-                                    "# Vertices": [70, 70, 70],
-                                    "# Robots": [1, 2, 3],
-                                    "Traversal Time": [125, 97, 87],
-                                    "Computation Time (sec)": [2.298217535018921, 7.478943586349487, 1592.7058815956116]})
+    adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5, 5],
+                                    "# Vertices": [70, 70, 70, 70],
+                                    "# Robots": [1, 2, 3, 4],
+                                    "Traversal Time": [125, 97, 87, 84],
+                                    "Computation Time (sec)": [2.298217535018921, 7.478943586349487, 1592.7058815956116, 15164.204834222794]})
 
+    for floor in range(1, num_floors + 1):
+        print(f"Floor {floor}/{num_floors}")
+        tree = adelphi_tree(num_floors=floor)
 
-    computed = len(adelphi_df)
-    for robots in range(computed + 1, num_robots + 1):
-        print(f"Robots {robots}/{num_robots}")
-        start = time()
-        traversal = fpt_compute_traversal(tree, robots, heuristics_on=True, backtrack=True)
-        end = time()
+        for robots in range(1, num_robots + 1):
+            print(f"Robots {robots}/{num_robots}")
+            start = time()
+            traversal = fpt_compute_traversal(tree, robots, heuristics_on=True, backtrack=True)
+            end = time()
 
-        adelphi_df.loc[len(adelphi_df)] = [5, tree.size(), robots, len(traversal), end - start]
-        print()
-        print(f"Num robots = {robots}: ")
-        print([5, tree.size(), robots, len(traversal), end - start])
-        print()
+            adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), robots, len(traversal), end - start]
+            print()
+            print(f"Num robots = {robots}: ")
+            print([floor, tree.size(), robots, len(traversal), end - start])
+            print()
 
     # Convert computation time from seconds to hours
     adelphi_df["Computation Time (hours)"] = adelphi_df["Computation Time (sec)"] / 3600
 
-    print(adelphi_df)
-
     fig, ax1 = plt.subplots(figsize=(10, 8))
 
     # Plot Traversal Time
-    ax1.plot(adelphi_df["# Robots"], adelphi_df["Traversal Time"], label="Traversal Time", color="blue")
+    max_floor_df = adelphi_df[adelphi_df['# Floors'] == adelphi_df['# Floors'].max()].copy()
+    ax1.plot(max_floor_df["# Robots"], max_floor_df["Traversal Time"], label="Traversal Time", color="blue")
     ax1.set_xlabel("# Robots", fontsize=20)
     ax1.set_ylabel("Traversal Time", color="blue", fontsize=20)
     ax1.tick_params(axis='y', labelcolor="blue", labelsize=18)
@@ -160,12 +161,15 @@ def adelphi_robots_plot(num_robots: int):
 
     # Set up secondary y-axis for Computation Time
     ax2 = ax1.twinx()
-    ax2.plot(adelphi_df["# Robots"], adelphi_df["Computation Time (hours)"], label="Computation Time (hours)",
+    ax2.plot(max_floor_df["# Robots"], max_floor_df["Computation Time (hours)"], label="Computation Time (hours)",
              color="red")
     ax2.set_ylabel("Computation Time (hours)", color="red", fontsize=20)
     ax2.tick_params(axis='y', labelcolor="red", labelsize=18)
 
     fig.tight_layout()  # Adjust layout for clarity
+    plt.show()
+
+    sns.lineplot(data=adelphi_df, x='# Vertices', y='Traversal Time', hue='# Robots')
     plt.show()
 
 

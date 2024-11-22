@@ -101,7 +101,6 @@ def compute_table(vertex: str,
     del down_capacities
     gc.collect()
 
-    print(vertex, len(table))
     return table
 
 

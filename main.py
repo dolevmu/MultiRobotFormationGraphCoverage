@@ -19,9 +19,9 @@ from plots.graphs import jaxonville_plot, adelphi_plot, adelphi_robots_plot
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # tree = example_tree()
-    tree = hard_example_tree()
+    # tree = hard_example_tree()
     # tree = jaxsonville_tree(num_floors=5)
-    # tree = adelphi_tree(num_floors=3)
+    tree = adelphi_tree(num_floors=2)
     print_tree(tree)
 
     # 1_006_514
@@ -31,13 +31,13 @@ if __name__ == '__main__':
     #     counter += 1
     # print(counter)
 
-    res = fpt_compute_traversal(tree, num_robots=3, parallel=False, backtrack=False, heuristics_on=True)
-    print(res)
+    # res = fpt_compute_traversal(tree, num_robots=3, parallel=False, backtrack=False, heuristics_on=True)
+    # print(res)
 
 
     # jaxonville_plot()
     # adelphi_plot(5)
-    # adelphi_robots_plot(3)
+    adelphi_robots_plot(4)
 
 
 
