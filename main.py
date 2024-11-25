@@ -19,19 +19,19 @@ from plots.graphs import jaxonville_plot, adelphi_plot, adelphi_robots_plot
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # tree = example_tree()  # 9
-    tree = hard_example_tree()  # 18
+    # tree = hard_example_tree()  # 18
     # tree = jaxsonville_tree(num_floors=5)
-    # tree = adelphi_tree(num_floors=5)
+    tree = adelphi_tree(num_floors=2)
     print_tree(tree)
 
     # 1_006_514
-    # sigs = enumerate_signatures('', tree, 3, heuristics_on=True)
+    # sigs = enumerate_signatures('MH6F2', tree, 4, heuristics_on=True)
     # counter = 0
     # for sig in tqdm(sigs):
     #     counter += 1
     # print(counter)
 
-    res = fpt_compute_traversal(tree, num_robots=3, parallel=False, backtrack=True, heuristics_on=True)
+    res = fpt_compute_traversal(tree, num_robots=4, parallel=False, backtrack=True, heuristics_on=True)
     print(res)
     print(len(res))
 
