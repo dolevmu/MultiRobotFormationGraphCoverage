@@ -144,30 +144,32 @@ def adelphi_robots_plot(num_robots: int, num_floors: int = 5):
     #                                 "Traversal Time": [],
     #                                 "Computation Time (sec)": []})
 
-    adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5, 5],
-                                    "# Vertices": [70, 70, 70, 70],
-                                    "# Robots": [1, 2, 3, 4],
-                                    "Traversal Time": [125, 97, 87, 84],
-                                    "Computation Time (sec)": [2.298217535018921, 7.478943586349487, 1592.7058815956116, 15164.204834222794]})
+    # adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5, 5],
+    #                                 "# Vertices": [70, 70, 70, 70],
+    #                                 "# Robots": [1, 2, 3, 4],
+    #                                 "Traversal Time": [125, 97, 87, 84],
+    #                                 "Computation Time (sec)": [2.298217535018921, 7.478943586349487, 1592.7058815956116, 15164.204834222794]})
+    #
+    # for floor in range(1, num_floors + 1):
+    #     print(f"Floor {floor}/{num_floors}")
+    #     tree = adelphi_tree(num_floors=floor)
+    #
+    #     for robots in range(1, num_robots + 1):
+    #         print(f"Robots {robots}/{num_robots}")
+    #         start = time()
+    #         traversal = fpt_compute_traversal(tree, robots, heuristics_on=True, backtrack=True)
+    #         end = time()
+    #
+    #         adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), robots, len(traversal), end - start]
+    #         print()
+    #         print(f"Num robots = {robots}: ")
+    #         print([floor, tree.size(), robots, len(traversal), end - start])
+    #         print()
+    #
+    # # Convert computation time from seconds to hours
+    # adelphi_df["Computation Time (hours)"] = adelphi_df["Computation Time (sec)"] / 3600
 
-    for floor in range(1, num_floors + 1):
-        print(f"Floor {floor}/{num_floors}")
-        tree = adelphi_tree(num_floors=floor)
-
-        for robots in range(1, num_robots + 1):
-            print(f"Robots {robots}/{num_robots}")
-            start = time()
-            traversal = fpt_compute_traversal(tree, robots, heuristics_on=True, backtrack=True)
-            end = time()
-
-            adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), robots, len(traversal), end - start]
-            print()
-            print(f"Num robots = {robots}: ")
-            print([floor, tree.size(), robots, len(traversal), end - start])
-            print()
-
-    # Convert computation time from seconds to hours
-    adelphi_df["Computation Time (hours)"] = adelphi_df["Computation Time (sec)"] / 3600
+    adelphi_df = pd.read_csv('data/adelphi.csv')
 
     fig, ax1 = plt.subplots(figsize=(10, 8))
 

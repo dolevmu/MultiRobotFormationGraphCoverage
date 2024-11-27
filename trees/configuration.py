@@ -29,7 +29,7 @@ def find_root(configuration: Configuration, tree: Tree) -> Optional[str]:
 
 def is_connected(configuration: Configuration, tree: Tree) -> bool:
     # check configuration states only
-    assert all([num_robots > 0 for num_robots in configuration.values()]), f"Some vertices in {configuration} are not occupied."
+    # assert all([num_robots > 0 for num_robots in configuration.values()]), f"Some vertices in {configuration} are not occupied."
     # check all occupied vertices are part of the tree
     assert all([vertex in tree.nodes for vertex in configuration]), f"Some vertices in {configuration} are not in tree."
 
@@ -164,3 +164,8 @@ def unpack_configuration(packed_config):
     if type(packed_config) is str:
         return packed_config
     return frozendict({v: count for v, count in msgpack.unpackb(packed_config)})
+
+
+def enumerate_config_bottom_up(config: Configuration, tree: Tree):
+    return filter(lambda x: config.get(x, 0) > 0,
+                  sorted(list(tree.nodes), key=lambda node: tree.depth(node), reverse=True))
