@@ -23,7 +23,7 @@ if __name__ == '__main__':
     # tree = example_tree()  # 9
     # tree = hard_example_tree()  # 18
     tree = jaxsonville_tree(num_floors=5)
-    # tree = adelphi_tree(num_floors=2)
+    # tree = adelphi_tree(num_floors=5)
     print_tree(tree)
 
     # 1_006_514
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     # adelphi_plot(5)
     # adelphi_robots_plot(num_robots=4, num_floors=5)
 
-    traversal = ncocta_compute_traversal(tree, num_robots=11, hh=[3,2])
+    traversal = ncocta_compute_traversal(tree, num_robots=3, hh=[1])
     # traversal = cocta_compute_traversal(tree, num_robots=11)
     print(is_traversal(traversal, tree), len(traversal))
     print(traversal)

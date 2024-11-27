@@ -27,8 +27,10 @@ def ncocta_compute_traversal(tree: Tree,
         m = floor(log(num_robots, N) - log(log(num_robots, N), N) - 1)
         hm = floor(m + log(m, N) + 5)
         hh = [hm + m - (i + 1) for i in range(m)]
-        assert all(h1 >= h2 for h1, h2 in zip([H] + hh, hh))
-        assert num_robots >= 1 + N*hh[0] + sum((N**i - N**(i-1))*hh[i] for i in range(1, len(hh)))
+
+    assert all(h1 >= h2 for h1, h2 in zip([H] + hh, hh))
+    robots_lower_bound = 1 + N*hh[0] + sum((N**i - N**(i-1))*hh[i] for i in range(1, len(hh)))
+    assert num_robots >= robots_lower_bound, f"Not enough robots: {num_robots} < {robots_lower_bound}"
 
     current_config = Counter()
     current_config[tree.root] = num_robots

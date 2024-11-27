@@ -41,8 +41,8 @@ def cocta_compute_traversal(tree: Tree,
     while state_dict[tree.root] != NodeState.FINISHED:
         assert current_config.total() == num_robots, counter
         print(f'{counter}, {current_config}')
-        if counter == 71:
-            print('here')
+        if counter == 140:
+            pass
         counter += 1
 
         next_config = Counter()
@@ -61,19 +61,23 @@ def cocta_compute_traversal(tree: Tree,
                 # v is unfinished, hence, there are still nodes to explore.
                 # If there are more robots than nodes to explore, we can use the rest of the robots
                 # to explore a different subtree.
-                if H - tree.depth(v) in hh:
-                    # If there are more robots than nodes to explore, move the rest of the
-                    # robots to the parent.
-                    to_explore = sum(state_dict[u] != NodeState.FINISHED
-                                     for u in tree.expand_tree(v))
-                    if to_explore < current_config[v]:
+                to_explore = 1 + sum(len(list(tree.expand_tree(u)))
+                                     for u in tree.expand_tree(v) if state_dict[u] != NodeState.FINISHED)
+                available_robots = current_config[v] - 1
+                if current_config[v] > to_explore:
+                    available_robots = to_explore - 1  # The rest moved to the parent or stay at v
+                    if tree.parent(v):
                         next_config[tree.parent(v).identifier] += current_config[v] - to_explore
-                        # Split the rest equally among the children.
-                        per_child = (to_explore - 1) // len(tree.children(v))
-                        remainder = (to_explore - 1) % len(tree.children(v))
                     else:
-                        per_child = (current_config[v] - 1) // len(tree.children(v))
-                        remainder = (current_config[v] - 1) % len(tree.children(v))
+                        next_config[v] += current_config[v] - to_explore
+
+                if H - tree.depth(v) in hh:
+                    # Leave one robot at v
+                    next_config[v] += 1
+
+                    # Split the rest equally among the children.
+                    per_child = available_robots // len(tree.children(v))
+                    remainder = available_robots % len(tree.children(v))
 
                     for u in tree.children(v):
                         if per_child > 0:
@@ -81,80 +85,75 @@ def cocta_compute_traversal(tree: Tree,
                             state_dict[u.identifier] = NodeState.INHABITED if tree.children(u.identifier) else NodeState.FINISHED
                     if remainder > 0:
                         next_config[u.identifier] += remainder
+                        state_dict[u.identifier] = NodeState.INHABITED if tree.children(u.identifier) else NodeState.FINISHED
+
+                elif H - tree.depth(v) <= hh[0]:
                     # Leave one robot at v
                     next_config[v] += 1
-                elif H - tree.depth(v) <= hh[0]:
+
                     # Select a child u of v such that u is unfinished.
                     unfinished_childs = [u.identifier for u in tree.children(v) if state_dict[u.identifier] != NodeState.FINISHED]
                     to_explore = np.cumsum([len(list(tree.expand_tree(u))) for u in unfinished_childs])
-                    childs_to_explore = sum(current_config[v] - 1 >= to_explore)
+                    childs_to_explore = sum(available_robots >= to_explore)
                     # Move all robots in v to u leaving one robot in v.
                     # If there are more robots than nodes to explore, select another child to move
                     # the rest to.
                     for u in unfinished_childs[:childs_to_explore]:
                         next_config[u] += len(list(tree.expand_tree(u)))
                         state_dict[u] = NodeState.INHABITED if tree.children(u) else NodeState.FINISHED
-
                     if childs_to_explore > 0:
-                        remainder = current_config[v] - 1 - int(to_explore[childs_to_explore-1])
+                        remainder = available_robots - int(to_explore[childs_to_explore-1])
                     else:
-                        remainder = current_config[v] - 1
+                        remainder = available_robots
                     if len(unfinished_childs) > childs_to_explore and remainder > 0:
                         next_config[unfinished_childs[childs_to_explore]] += remainder
-                        next_config[v] += 1
+                        state_dict[unfinished_childs[childs_to_explore]] = NodeState.INHABITED if tree.children(unfinished_childs[childs_to_explore]) else NodeState.FINISHED
                     elif tree.parent(v) and remainder > 0:
                         next_config[tree.parent(v).identifier] += remainder
-                        next_config[v] += 1
                     else:
                         next_config[v] += remainder
-                        next_config[v] += 1
                 else:
                     # Select a child u of v such that u is unfinished.
                     unfinished_childs = [u.identifier for u in tree.children(v) if state_dict[u.identifier] != NodeState.FINISHED]
-                    to_explore = np.cumsum([len(list(tree.expand_tree(u))) for u in unfinished_childs])
-                    # If there are more nodes to explore than robots, move all robots in v to u.
-                    if to_explore[-1] >= current_config[v] and current_config[v] == num_robots:
-                        next_config[unfinished_childs[0]] += current_config[v]
-                        state_dict[unfinished_childs[0]] = NodeState.INHABITED if tree.children(unfinished_childs[0]) else NodeState.FINISHED
-                    elif to_explore[-1] >= current_config[v]:
-                        next_config[v] += current_config[v]
-                    elif to_explore[-1] < current_config[v]:
+
+                    # If child subtree has more nodes to explore than available robots, move all to child
+                    u = unfinished_childs[0]
+                    to_explore = len(list(tree.expand_tree(u)))
+                    can_jump = not tree.parent(u) or current_config[tree.parent(u)] == 0
+                    if to_explore >= current_config[v] and can_jump:
+                        next_config[u] += current_config[v]
+                    else:
                         # If there are more robots than nodes to explore, leave one robot in v and select another child to move
                         # the rest to.
                         next_config[v] += 1
-                        for u in unfinished_childs:
+
+                        to_explore = np.cumsum([len(list(tree.expand_tree(u))) for u in unfinished_childs])
+                        childs_to_explore = sum(available_robots >= to_explore)
+                        # Move all robots in v to u leaving one robot in v.
+                        # If there are more robots than nodes to explore, select another child to move
+                        # the rest to.
+                        for u in unfinished_childs[:childs_to_explore]:
                             next_config[u] += len(list(tree.expand_tree(u)))
                             state_dict[u] = NodeState.INHABITED if tree.children(u) else NodeState.FINISHED
-                        remainder = current_config[v] - 1 - int(to_explore[-1])
-                        if remainder > 0:
-                            if tree.parent(v):
-                                next_config[tree.parent(v).identifier] += remainder
-                            else:
-                                next_config[v] += remainder
-                    # else:
-                    #     childs_to_explore = sum(current_config[v] - 1 >= to_explore)
-                    #     for u in unfinished_childs[:childs_to_explore]:
-                    #         next_config[u] += len(list(tree.expand_tree(u)))
-                    #         state_dict[u] = NodeState.INHABITED if tree.children(u) else NodeState.FINISHED
-                    #     if childs_to_explore == 0:
-                    #         remaining_robots = current_config[v] - 1
-                    #     else:
-                    #         remaining_robots = current_config[v] - 1 - int(to_explore[childs_to_explore-1])
-                    #     if remaining_robots > 0:
-                    #         if len(unfinished_childs) > childs_to_explore:
-                    #             next_config[unfinished_childs[childs_to_explore]] += remaining_robots
-                    #             state_dict[unfinished_childs[childs_to_explore]] = NodeState.INHABITED if tree.children(unfinished_childs[childs_to_explore]) else NodeState.FINISHED
-                    #         elif tree.parent(v):
-                    #             next_config[tree.parent(v).identifier] += remaining_robots
-                    #         else:
-                    #             next_config[v] += remaining_robots
-                    #     next_config[v] += 1
+                        if childs_to_explore > 0:
+                            remainder = available_robots - int(to_explore[childs_to_explore - 1])
+                        else:
+                            remainder = available_robots - 1
+                        if len(unfinished_childs) > childs_to_explore and remainder > 0:
+                            next_config[unfinished_childs[childs_to_explore]] += remainder
+                            state_dict[unfinished_childs[childs_to_explore]] = NodeState.INHABITED if tree.children(unfinished_childs[childs_to_explore]) else NodeState.FINISHED
+                        elif tree.parent(v) and remainder > 0:
+                            next_config[tree.parent(v).identifier] += remainder
+                        else:
+                            next_config[v] += remainder
             else:
                 # v is inhabited, the subtree is explored but there are still robots in the subtree.
                 # The robots leave one robot behind to maintain communication and drip to the parent node.
                 if tree.parent(v):
                     next_config[tree.parent(v).identifier] += current_config[v] - 1
                     next_config[v] += 1
+                else:
+                    next_config[v] += current_config[v]
 
         # Update config and traversal
         current_config = next_config
