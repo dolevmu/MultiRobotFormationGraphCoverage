@@ -81,7 +81,7 @@ def ncocta_compute_traversal(tree: Tree,
                             state_dict[u] = NodeState.INHABITED if tree.children(u) else NodeState.FINISHED
                     if remainder > 0:
                         next_config[u] += remainder
-                        state_dict[u] = NodeState.INHABITED if tree.children(u.identifier) else NodeState.FINISHED
+                        state_dict[u] = NodeState.INHABITED if tree.children(u) else NodeState.FINISHED
 
                 elif H - tree.depth(v) <= hh[0]:
                     # Select a child u of v such that u is unfinished.
