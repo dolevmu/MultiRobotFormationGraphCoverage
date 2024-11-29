@@ -8,8 +8,10 @@ from enum import Enum
 from tqdm import tqdm
 from treelib import Tree
 
-from trees.configuration import enumerate_config_bottom_up
+from trees.configuration import enumerate_config_bottom_up, find_root
 from trees.traversal import Traversal
+from trees.tree import print_tree
+
 
 class NodeState(Enum):
     UNFINISHED = 1
@@ -30,7 +32,8 @@ def ncocta_compute_traversal(tree: Tree,
 
     assert all(h1 >= h2 for h1, h2 in zip([H] + hh, hh))
     robots_lower_bound = 1 + N*hh[0] + sum((N**i - N**(i-1))*hh[i] for i in range(1, len(hh)))
-    assert num_robots >= robots_lower_bound, f"Not enough robots: {num_robots} < {robots_lower_bound}"
+    # This condition only holds for perfect trees, otherwise, it can be fine to have less robots.
+    # assert num_robots >= robots_lower_bound, f"Not enough robots: {num_robots} < {robots_lower_bound}"
 
     current_config = Counter()
     current_config[tree.root] = num_robots
@@ -44,6 +47,9 @@ def ncocta_compute_traversal(tree: Tree,
         assert current_config.total() == num_robots, counter
         print(f'{counter}, {current_config}')
         counter += 1
+
+        if counter == 239:
+            print('here')
 
         next_config = Counter()
         for v in enumerate_config_bottom_up(current_config, tree):
@@ -63,9 +69,11 @@ def ncocta_compute_traversal(tree: Tree,
                 if H - tree.depth(v) in hh:
                     # Leave one robot at v
                     next_config[v] += 1
-                    # Split the rest equally among the children.
-                    per_child = (current_config[v] - 1) // len(tree.children(v))
-                    remainder = (current_config[v] - 1) % len(tree.children(v))
+                    # Split the rest equally among the (unfinished) children.
+                    num_unfinished = sum(state_dict[u.identifier] != NodeState.FINISHED
+                                         for u in tree.children(v))
+                    per_child = (current_config[v] - 1) // num_unfinished
+                    remainder = (current_config[v] - 1) % num_unfinished
 
                     for u in tree.children(v):
                         if per_child > 0:
@@ -99,6 +107,11 @@ def ncocta_compute_traversal(tree: Tree,
                     next_config[v] += 1
 
         # Update config and traversal
+        if next_config == current_config:
+            print_tree(tree.subtree(find_root(current_config, tree)))
+            assert next_config != current_config, f"Not enough robots, stuck at ({counter}) {current_config}."
+
+
         current_config = next_config
         traversal.append(dict(current_config))
 

@@ -76,8 +76,10 @@ def cocta_compute_traversal(tree: Tree,
                     next_config[v] += 1
 
                     # Split the rest equally among the children.
-                    per_child = available_robots // len(tree.children(v))
-                    remainder = available_robots % len(tree.children(v))
+                    num_unfinished = sum(state_dict[u.identifier] != NodeState.FINISHED
+                                         for u in tree.children(v))
+                    per_child = available_robots // num_unfinished
+                    remainder = available_robots % num_unfinished
 
                     for u in tree.children(v):
                         if per_child > 0:
