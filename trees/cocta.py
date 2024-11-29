@@ -8,8 +8,10 @@ from enum import Enum
 from tqdm import tqdm
 from treelib import Tree
 
-from trees.configuration import enumerate_config_bottom_up
+from trees.configuration import enumerate_config_bottom_up, find_root
 from trees.traversal import Traversal
+from trees.tree import print_tree
+
 
 class NodeState(Enum):
     UNFINISHED = 1
@@ -38,13 +40,7 @@ def cocta_compute_traversal(tree: Tree,
     state_dict[tree.root] = NodeState.INHABITED
 
     counter = 1
-    while state_dict[tree.root] != NodeState.FINISHED:
-        assert current_config.total() == num_robots, counter
-        print(f'{counter}, {current_config}')
-        if counter == 140:
-            pass
-        counter += 1
-
+    while any(state_dict[u] == NodeState.UNFINISHED for u in tree.nodes):
         next_config = Counter()
         for v in enumerate_config_bottom_up(current_config, tree):
             if all(state_dict[u.identifier] == NodeState.FINISHED for u in tree.children(v)):
@@ -124,6 +120,7 @@ def cocta_compute_traversal(tree: Tree,
                     can_jump = not tree.parent(u) or current_config[tree.parent(u)] == 0
                     if to_explore >= current_config[v] and can_jump:
                         next_config[u] += current_config[v]
+                        state_dict[u] = NodeState.INHABITED if tree.children(u) else NodeState.FINISHED
                     else:
                         # If there are more robots than nodes to explore, leave one robot in v and select another child to move
                         # the rest to.
@@ -157,11 +154,19 @@ def cocta_compute_traversal(tree: Tree,
                 else:
                     next_config[v] += current_config[v]
 
+        if next_config == current_config:
+            print_tree(tree.subtree(find_root(current_config, tree)))
+            assert next_config != current_config, f"Not enough robots, stuck at ({counter}) {current_config}."
+
+
         # Update config and traversal
         current_config = next_config
         traversal.append(dict(current_config))
 
-    assert current_config.total() == num_robots, counter
+        assert current_config.total() == num_robots, counter
+        print(f'{counter}, {current_config}')
+        counter += 1
+
     print(f'{counter}, {current_config}')
     counter += 1
 

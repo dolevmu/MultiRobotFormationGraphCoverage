@@ -43,7 +43,10 @@ def ncocta_compute_traversal(tree: Tree,
     state_dict[tree.root] = NodeState.INHABITED
 
     counter = 1
-    while state_dict[tree.root] != NodeState.FINISHED:
+    while any(state_dict[u] == NodeState.UNFINISHED for u in tree.nodes):
+        if counter == 293:
+            print('here')
+
         next_config = Counter()
         for v in enumerate_config_bottom_up(current_config, tree):
             if all(state_dict[u.identifier] == NodeState.FINISHED for u in tree.children(v)):
@@ -81,12 +84,14 @@ def ncocta_compute_traversal(tree: Tree,
                     u = [u.identifier for u in tree.children(v) if state_dict[u.identifier] != NodeState.FINISHED][0]
                     # Move all the robots in v to u leaving one robot in v.
                     next_config[u] += current_config[v] - 1
+                    state_dict[u] = NodeState.INHABITED if tree.children(u) else NodeState.FINISHED
                     next_config[v] += 1
                 else:
                     # Select a child u of v such that u is unfinished.
                     u = [u.identifier for u in tree.children(v) if state_dict[u.identifier] != NodeState.FINISHED][0]
                     # Move all the robots in v to u
                     next_config[u] += current_config[v]
+                    state_dict[u] = NodeState.INHABITED if tree.children(u) else NodeState.FINISHED
             else:
                 # v is inhabited, the subtree is explored but there are still robots in the subtree.
                 # The robots wait on a node (vertex) with height in hh (split node) until all the robots arrive.
@@ -99,18 +104,17 @@ def ncocta_compute_traversal(tree: Tree,
                     next_config[tree.parent(v).identifier] += current_config[v] - 1
                     next_config[v] += 1
 
-        # Update config and traversal
         if next_config == current_config:
             print_tree(tree.subtree(find_root(current_config, tree)))
             assert next_config != current_config, f"Not enough robots, stuck at ({counter}) {current_config}."
 
-
+        # Update config and traversal
         current_config = next_config
         traversal.append(dict(current_config))
 
-    assert current_config.total() == num_robots, counter
-    print(f'{counter}, {current_config}')
-    counter += 1
+        assert current_config.total() == num_robots, counter
+        print(f'{counter}, {current_config}')
+        counter += 1
 
     # Return the NCOCTA traversal
     return tuple(traversal)
