@@ -42,15 +42,8 @@ def ncocta_compute_traversal(tree: Tree,
     state_dict = {v: NodeState.UNFINISHED for v in tree.nodes}
     state_dict[tree.root] = NodeState.INHABITED
 
-    counter = 0
+    counter = 1
     while state_dict[tree.root] != NodeState.FINISHED:
-        assert current_config.total() == num_robots, counter
-        print(f'{counter}, {current_config}')
-        counter += 1
-
-        if counter == 239:
-            print('here')
-
         next_config = Counter()
         for v in enumerate_config_bottom_up(current_config, tree):
             if all(state_dict[u.identifier] == NodeState.FINISHED for u in tree.children(v)):
@@ -116,6 +109,8 @@ def ncocta_compute_traversal(tree: Tree,
         traversal.append(dict(current_config))
 
     assert current_config.total() == num_robots, counter
+    print(f'{counter}, {current_config}')
+    counter += 1
 
-    # Return the COCTA traversal
+    # Return the NCOCTA traversal
     return tuple(traversal)
