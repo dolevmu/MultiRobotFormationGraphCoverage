@@ -70,18 +70,18 @@ def ncocta_compute_traversal(tree: Tree,
                     # Leave one robot at v
                     next_config[v] += 1
                     # Split the rest equally among the (unfinished) children.
-                    num_unfinished = sum(state_dict[u.identifier] != NodeState.FINISHED
-                                         for u in tree.children(v))
-                    per_child = (current_config[v] - 1) // num_unfinished
-                    remainder = (current_config[v] - 1) % num_unfinished
+                    unfinished = [u.identifier for u in tree.children(v)
+                                  if state_dict[u.identifier] != NodeState.FINISHED]
+                    per_child = (current_config[v] - 1) // len(unfinished)
+                    remainder = (current_config[v] - 1) % len(unfinished)
 
-                    for u in tree.children(v):
+                    for u in unfinished:
                         if per_child > 0:
-                            next_config[u.identifier] += per_child
-                            state_dict[u.identifier] = NodeState.INHABITED if tree.children(u.identifier) else NodeState.FINISHED
+                            next_config[u] += per_child
+                            state_dict[u] = NodeState.INHABITED if tree.children(u) else NodeState.FINISHED
                     if remainder > 0:
-                        next_config[u.identifier] += remainder
-                        state_dict[u.identifier] = NodeState.INHABITED if tree.children(u.identifier) else NodeState.FINISHED
+                        next_config[u] += remainder
+                        state_dict[u] = NodeState.INHABITED if tree.children(u.identifier) else NodeState.FINISHED
 
                 elif H - tree.depth(v) <= hh[0]:
                     # Select a child u of v such that u is unfinished.
