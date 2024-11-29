@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import seaborn as sns
 
+from trees.cocta import cocta_compute_traversal
 from trees.table import fpt_compute_traversal
 from trees.tree import adelphi_tree, jaxsonville_tree
 
@@ -67,7 +68,7 @@ def jaxonville_plot(num_floors: int = 5, num_robots: int = 3):
     sns.lineplot(data=jax_df, x='# Vertices', y='Traversal Time', hue='# Robots')
     plt.show()
 
-    jax_df.to_csv('data/jaxonville.csv', index=False)  # Use index=False to avoid saving row indices
+    jax_df.to_csv('data/jaxonville_fpt.csv', index=False)  # Use index=False to avoid saving row indices
 
 
 
@@ -144,32 +145,32 @@ def adelphi_robots_plot(num_robots: int, num_floors: int = 5):
     #                                 "Traversal Time": [],
     #                                 "Computation Time (sec)": []})
 
-    # adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5, 5],
-    #                                 "# Vertices": [70, 70, 70, 70],
-    #                                 "# Robots": [1, 2, 3, 4],
-    #                                 "Traversal Time": [125, 97, 87, 84],
-    #                                 "Computation Time (sec)": [2.298217535018921, 7.478943586349487, 1592.7058815956116, 15164.204834222794]})
-    #
-    # for floor in range(1, num_floors + 1):
-    #     print(f"Floor {floor}/{num_floors}")
-    #     tree = adelphi_tree(num_floors=floor)
-    #
-    #     for robots in range(1, num_robots + 1):
-    #         print(f"Robots {robots}/{num_robots}")
-    #         start = time()
-    #         traversal = fpt_compute_traversal(tree, robots, heuristics_on=True, backtrack=True)
-    #         end = time()
-    #
-    #         adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), robots, len(traversal), end - start]
-    #         print()
-    #         print(f"Num robots = {robots}: ")
-    #         print([floor, tree.size(), robots, len(traversal), end - start])
-    #         print()
-    #
-    # # Convert computation time from seconds to hours
-    # adelphi_df["Computation Time (hours)"] = adelphi_df["Computation Time (sec)"] / 3600
+    adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5, 5],
+                                    "# Vertices": [70, 70, 70, 70],
+                                    "# Robots": [1, 2, 3, 4],
+                                    "Traversal Time": [125, 97, 87, 84],
+                                    "Computation Time (sec)": [2.298217535018921, 7.478943586349487, 1592.7058815956116, 15164.204834222794]})
 
-    adelphi_df = pd.read_csv('data/adelphi.csv')
+    for floor in range(1, num_floors + 1):
+        print(f"Floor {floor}/{num_floors}")
+        tree = adelphi_tree(num_floors=floor)
+
+        for robots in range(1, num_robots + 1):
+            print(f"Robots {robots}/{num_robots}")
+            start = time()
+            traversal = fpt_compute_traversal(tree, robots, heuristics_on=True, backtrack=True)
+            end = time()
+
+            adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), robots, len(traversal), end - start]
+            print()
+            print(f"Num robots = {robots}: ")
+            print([floor, tree.size(), robots, len(traversal), end - start])
+            print()
+
+    # Convert computation time from seconds to hours
+    adelphi_df["Computation Time (hours)"] = adelphi_df["Computation Time (sec)"] / 3600
+
+    adelphi_df = pd.read_csv('data/adelphi_fpt.csv')
 
     fig, ax1 = plt.subplots(figsize=(10, 8))
 
@@ -194,7 +195,24 @@ def adelphi_robots_plot(num_robots: int, num_floors: int = 5):
     sns.lineplot(data=adelphi_df, x='# Vertices', y='Traversal Time', hue='# Robots')
     plt.show()
 
-    adelphi_df.to_csv('data/adelphi.csv', index=False)  # Use index=False to avoid saving row indices
+    adelphi_df.to_csv('data/adelphi_fpt.csv', index=False)  # Use index=False to avoid saving row indices
 
 
+def compare_fpt_cocta(fpt_df, tree_generator):
+    cocta_df = pd.DataFrame(columns=fpt_df.columns)
+
+    for i in range(len(fpt_df)):
+        entry = fpt_df.iloc[i]
+        tree = tree_generator(num_floors=round(entry["# Floors"]))
+
+        start = time()
+        traversal = cocta_compute_traversal(tree, entry["# Robots"])
+        end = time()
+
+        cocta_df.loc[len(cocta_df)] = [entry["# Floors"], tree.size(), entry["# Robots"], len(traversal), end - start, (end - start) / 3600]
+
+    fpt_df["% Saved Time"] = (cocta_df["Traversal Time"] / fpt_df["Traversal Time"] - 1) * 100
+
+    sns.lineplot(data=fpt_df[fpt_df["# Floors"] > 1], x="# Vertices", y="% Saved Time", hue="# Robots")
+    plt.show()
 

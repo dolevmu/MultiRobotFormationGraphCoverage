@@ -9,6 +9,7 @@ from tqdm import tqdm
 from treelib import Tree
 
 from trees.configuration import enumerate_config_bottom_up, find_root
+from trees.table import fpt_compute_traversal
 from trees.traversal import Traversal
 from trees.tree import print_tree
 
@@ -18,17 +19,26 @@ class NodeState(Enum):
     INHABITED = 2
     FINISHED = 3
 
+H_TABLE = {2: [1],
+           3: [2,1],
+           4: [3,2,1]}
+
 def ncocta_compute_traversal(tree: Tree,
                             num_robots: int,
                             hh: Optional[List[int]] = None) -> Traversal:
+    if num_robots == 1:
+        return fpt_compute_traversal(tree, 1)
+
     H = tree.depth()  # Tree max depth
     N = max(len(tree.children(v)) for v in tree.nodes) # Tree max degree
 
     if not hh:
-        eps = 1 / (N-1)
-        m = floor(log(num_robots, N) - log(log(num_robots, N), N) - 1)
-        hm = floor(m + log(m, N) + 5)
-        hh = [hm + m - (i + 1) for i in range(m)]
+        if num_robots in H_TABLE:
+            hh = H_TABLE[num_robots]
+        else:
+            m = floor(log(num_robots, N) - log(log(num_robots, N), N) - 1)
+            hm = floor(m + log(m, N) + 5)
+            hh = [hm + m - (i + 1) for i in range(m)]
 
     assert all(h1 >= h2 for h1, h2 in zip([H] + hh, hh))
     robots_lower_bound = 1 + N*hh[0] + sum((N**i - N**(i-1))*hh[i] for i in range(1, len(hh)))

@@ -2,6 +2,7 @@
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 import cProfile
 
+import pandas as pd
 from frozendict import frozendict
 from tqdm import tqdm
 
@@ -16,7 +17,7 @@ from trees.tree import print_tree, hard_example_tree, example_tree, jaxsonville_
 
 from time import time
 
-from plots.graphs import jaxonville_plot, adelphi_plot, adelphi_robots_plot
+from plots.graphs import jaxonville_plot, adelphi_plot, adelphi_robots_plot, compare_fpt_cocta
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -38,14 +39,19 @@ if __name__ == '__main__':
     # print(len(res))
 
 
-    # jaxonville_plot(num_robots=3, num_floors=20)
+    # jaxonville_plot(num_robots=2, num_floors=6)
     # adelphi_plot(5)
     # adelphi_robots_plot(num_robots=4, num_floors=5)
 
     # traversal = ncocta_compute_traversal(tree, num_robots=3, hh=[2,1])
-    traversal = cocta_compute_traversal(tree, num_robots=4, hh=[3,2,1])
-    print(is_traversal(traversal, tree), len(traversal))
-    print(traversal)
+    # traversal = cocta_compute_traversal(tree, num_robots=4, hh=[3,2,1])
+    # print(is_traversal(traversal, tree), len(traversal))
+    # print(traversal)
+
+    jax_fpt_df = pd.read_csv('data/jaxonville_fpt.csv')
+    adelphi_fpt_df = pd.read_csv('data/adelphi_fpt.csv')
+    compare_fpt_cocta(jax_fpt_df, jaxsonville_tree)
+    compare_fpt_cocta(adelphi_fpt_df, adelphi_tree)
 
 
 
