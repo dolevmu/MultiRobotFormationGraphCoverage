@@ -27,6 +27,7 @@ if __name__ == '__main__':
     # tree = adelphi_tree(num_floors=5)
     print_tree(tree)
 
+
     # 1_006_514
     # sigs = enumerate_signatures('MH6F2', tree, 4, heuristics_on=True)
     # counter = 0
@@ -48,10 +49,10 @@ if __name__ == '__main__':
     # print(is_traversal(traversal, tree), len(traversal))
     # print(traversal)
 
-    jax_fpt_df = pd.read_csv('data/jaxonville_fpt.csv')
-    adelphi_fpt_df = pd.read_csv('data/adelphi_fpt.csv')
-    compare_fpt_cocta(jax_fpt_df, jaxsonville_tree)
-    compare_fpt_cocta(adelphi_fpt_df, adelphi_tree)
+    # jax_fpt_df = pd.read_csv('data/jaxonville_fpt.csv')
+    # adelphi_fpt_df = pd.read_csv('data/adelphi_fpt.csv')
+    # compare_fpt_cocta(jax_fpt_df, jaxsonville_tree)
+    # compare_fpt_cocta(adelphi_fpt_df, adelphi_tree)
 
 
 

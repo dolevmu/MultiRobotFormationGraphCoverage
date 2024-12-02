@@ -8,7 +8,7 @@ from enum import Enum
 from tqdm import tqdm
 from treelib import Tree
 
-from trees.configuration import enumerate_config_bottom_up, find_root
+from trees.configuration import enumerate_config_bottom_up, find_root, Configuration
 from trees.ncocta import H_TABLE
 from trees.table import fpt_compute_traversal
 from trees.traversal import Traversal
@@ -22,7 +22,8 @@ class NodeState(Enum):
 
 def cocta_compute_traversal(tree: Tree,
                             num_robots: int,
-                            hh: Optional[List[int]] = None) -> Traversal:
+                            hh: Optional[List[int]] = None,
+                            start_config: Optional[Configuration] = None) -> Traversal:
     if num_robots == 1:
         return fpt_compute_traversal(tree, 1)
 
@@ -37,15 +38,19 @@ def cocta_compute_traversal(tree: Tree,
             hm = floor(m + log(m, N) + 5)
             hh = [hm + m - (i + 1) for i in range(m)]
 
-    current_config = Counter()
-    current_config[tree.root] = num_robots
+    if not start_config:
+        current_config = Counter()
+        current_config[tree.root] = num_robots
+    else:
+        current_config = start_config
+    root = find_root(current_config, tree)
     traversal = [dict(current_config)]
 
     state_dict = {v: NodeState.UNFINISHED for v in tree.nodes}
     state_dict[tree.root] = NodeState.INHABITED
 
     counter = 1
-    while any(state_dict[u] == NodeState.UNFINISHED for u in tree.nodes):
+    while any(state_dict[u] == NodeState.UNFINISHED for u in tree.expand_tree(root)):
         next_config = Counter()
         for v in enumerate_config_bottom_up(current_config, tree):
             if all(state_dict[u.identifier] == NodeState.FINISHED for u in tree.children(v)):
