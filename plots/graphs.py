@@ -137,18 +137,6 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
     plt.show()
 
 def adelphi_robots_plot(num_robots: int, num_floors: int = 5, max_sig_length: int = 8):
-    # adelphi_df = pd.DataFrame(data={"# Floors": [],
-    #                                 "# Vertices": [],
-    #                                 "# Robots": [],
-    #                                 "Traversal Time": [],
-    #                                 "Computation Time (sec)": []})
-
-    # adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5, 5],
-    #                                 "# Vertices": [70, 70, 70, 70],
-    #                                 "# Robots": [1, 2, 3, 4],
-    #                                 "Traversal Time": [125, 97, 87, 84],
-    #                                 "Computation Time (sec)": [2.298217535018921, 7.478943586349487, 1592.7058815956116, 15164.204834222794]})
-
     adelphi_df = pd.read_csv('data/adelphi_fpt.csv')
 
     for floor in range(round(adelphi_df["# Floors"].max()) + 1, num_floors + 1):
