@@ -10,30 +10,28 @@ from trees.table import fpt_compute_traversal
 from trees.tree import adelphi_tree, jaxsonville_tree
 
 
-def jaxonville_plot(num_floors: int = 5, num_robots: int = 3):
-    jax_df = pd.DataFrame({
-        "# Floors": [1, 2, 3, 4, 5, 6],
-        "# Vertices": [2, 42, 82, 122, 162, 202],
-        "# Robots": [3, 3, 3, 3, 3, 3],
-        "Traversal Time": [2, 46, 98, 159, 211, 264],
-        "Computation Time (sec)": [0.05159711837768555, 670.23, 1733.03, 3428.89, 5611.87, 8239.31]
-    })
+def jaxonville_robots_plot(num_floors: int = 6, num_robots: int = 3, max_sig_length=9):
+    jax_df = pd.read_csv('data/jaxonville_fpt.csv')
 
-    for floor in range(1, num_floors + 1):
+    for floor in range(round(jax_df["# Floors"].max()) + 1, num_floors + 1):
         print(f"Floor {floor}/{num_floors}")
         tree = jaxsonville_tree(num_floors=floor)
 
         for robots in range(1, num_robots + 1):
             print(f"Robots {robots}/{num_robots}")
             start = time()
-            traversal = fpt_compute_traversal(tree, robots, heuristics_on=True, backtrack=True)
+            traversal = fpt_compute_traversal(tree, robots, heuristics_on=True, backtrack=True, max_sig_length=max_sig_length)
             end = time()
 
-            jax_df.loc[len(jax_df)] = [floor, tree.size(), robots, len(traversal), end - start]
+            jax_df.loc[len(jax_df)] = [floor, tree.size(), robots, len(traversal), end - start, (end - start) / 3600]
             print()
             print(f"Num robots = {robots}: ")
             print([floor, tree.size(), robots, len(traversal), end - start])
             print()
+
+        # Save progress...
+        jax_df.to_csv('data/adelphi_fpt.csv', index=False)  # Use index=False to avoid saving row indices
+
 
     # Convert computation time from seconds to hours
     jax_df["Computation Time (hours)"] = jax_df["Computation Time (sec)"] / 3600
@@ -138,20 +136,22 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
     plt.legend()  # title="Heuristics")
     plt.show()
 
-def adelphi_robots_plot(num_robots: int, num_floors: int = 5):
+def adelphi_robots_plot(num_robots: int, num_floors: int = 5, max_sig_length: int = 8):
     # adelphi_df = pd.DataFrame(data={"# Floors": [],
     #                                 "# Vertices": [],
     #                                 "# Robots": [],
     #                                 "Traversal Time": [],
     #                                 "Computation Time (sec)": []})
 
-    adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5, 5],
-                                    "# Vertices": [70, 70, 70, 70],
-                                    "# Robots": [1, 2, 3, 4],
-                                    "Traversal Time": [125, 97, 87, 84],
-                                    "Computation Time (sec)": [2.298217535018921, 7.478943586349487, 1592.7058815956116, 15164.204834222794]})
+    # adelphi_df = pd.DataFrame(data={"# Floors": [5, 5, 5, 5],
+    #                                 "# Vertices": [70, 70, 70, 70],
+    #                                 "# Robots": [1, 2, 3, 4],
+    #                                 "Traversal Time": [125, 97, 87, 84],
+    #                                 "Computation Time (sec)": [2.298217535018921, 7.478943586349487, 1592.7058815956116, 15164.204834222794]})
 
-    for floor in range(1, num_floors + 1):
+    adelphi_df = pd.read_csv('data/adelphi_fpt.csv')
+
+    for floor in range(round(adelphi_df["# Floors"].max()) + 1, num_floors + 1):
         print(f"Floor {floor}/{num_floors}")
         tree = adelphi_tree(num_floors=floor)
 
@@ -161,16 +161,14 @@ def adelphi_robots_plot(num_robots: int, num_floors: int = 5):
             traversal = fpt_compute_traversal(tree, robots, heuristics_on=True, backtrack=True)
             end = time()
 
-            adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), robots, len(traversal), end - start]
+            adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), robots, len(traversal), end - start, (end - start) / 3600]
             print()
             print(f"Num robots = {robots}: ")
             print([floor, tree.size(), robots, len(traversal), end - start])
             print()
 
-    # Convert computation time from seconds to hours
-    adelphi_df["Computation Time (hours)"] = adelphi_df["Computation Time (sec)"] / 3600
-
-    adelphi_df = pd.read_csv('data/adelphi_fpt.csv')
+        # Save progress...
+        adelphi_df.to_csv('data/adelphi_fpt.csv', index=False)  # Use index=False to avoid saving row indices
 
     fig, ax1 = plt.subplots(figsize=(10, 8))
 
@@ -213,6 +211,6 @@ def compare_fpt_cocta(fpt_df, tree_generator):
 
     fpt_df["% Saved Time"] = (cocta_df["Traversal Time"] / fpt_df["Traversal Time"] - 1) * 100
 
-    sns.lineplot(data=fpt_df[fpt_df["# Floors"] > 1], x="# Vertices", y="% Saved Time", hue="# Robots")
+    sns.lineplot(data=fpt_df[fpt_df["# Floors"] > 1], x="# Floors", y="% Saved Time", hue="# Robots")
     plt.show()
 

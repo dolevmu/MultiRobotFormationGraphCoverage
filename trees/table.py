@@ -43,7 +43,8 @@ def compute_table(vertex: str,
                   num_robots: int,
                   backtrack: bool = False,
                   heuristics_on: bool = True,
-                  parallel: bool = False) -> Table:
+                  parallel: bool = False,
+                  max_sig_length: Optional[int] = None) -> Table:
     parent = vertex if vertex == tree.root else tree.parent(vertex).identifier
     table = defaultdict(lambda: TableEntry(vertex=vertex, signature=(), child_signatures={}, cost=2*tree.size()))
 
@@ -56,7 +57,8 @@ def compute_table(vertex: str,
         signatures_iterator = enumerate_signatures(vertex, tree, num_robots,
                                                    raw=False,
                                                    global_arrow_capacities=down_capacities,
-                                                   heuristics_on=heuristics_on)
+                                                   heuristics_on=heuristics_on,
+                                                   max_sig_length=max_sig_length)
         # signatures_iterator = enumerate_signatures_given_child_tables(children_tables, vertex, tree, num_robots,
         #                                                               raw=False,
         #                                                               global_arrow_capacities=down_capacities,
@@ -264,9 +266,10 @@ def fpt_compute_traversal(tree: Tree,
                           num_robots: int,
                           backtrack: bool = True,
                           heuristics_on: bool = True,
-                          parallel: bool = False) -> Optional[Traversal]:
+                          parallel: bool = False,
+                          max_sig_length: Optional[int] = None) -> Optional[Traversal]:
     table = compute_table(tree.root, tree, num_robots,
-                          backtrack=backtrack, heuristics_on=heuristics_on, parallel=parallel)
+                          backtrack=backtrack, heuristics_on=heuristics_on, parallel=parallel, max_sig_length=max_sig_length)
     # Find traversal with minimal cost
     root_table_entry = None
     traversal_time = 2*tree.size()

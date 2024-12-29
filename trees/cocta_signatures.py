@@ -10,7 +10,7 @@ from trees.configuration import UpArrow, FormalConfiguration, Configuration, enu
 from trees.signature import Signature
 
 
-def cocta_enumerate_init_config(vertex: str, tree: Tree, num_robots: int) -> List[Configuration]:
+def cocta_enumerate_initial_configuration(vertex: str, tree: Tree, num_robots: int) -> List[Configuration]:
     # Returns an enumerator for all possible ways of getting into a subtree
     assert vertex in tree.nodes, f"Vertex {vertex} is not in the tree."
 
@@ -27,21 +27,18 @@ def cocta_enumerate_init_config(vertex: str, tree: Tree, num_robots: int) -> Lis
     return collected_configurations
 
 
-def cocta_scan_signatures(current_signature: Signature, tree: Tree, hh: List[int]):
+def cocta_scan_signatures(current_signature: Signature, tree: Tree):
     num_robots = sum(current_signature[-1].values())
-
-    # We now want to compute a traversal with COCTA
 
 
 def enumerate_cocta_signatures(vertex: str,
                                tree: Tree,
-                               num_robots: int,
-                               hh: List[int]) -> Iterator[Signature]:
+                               num_robots: int) -> Iterator[Signature]:
     # First, we want to enumerate all possible starting configurations.
-    starting_configs = cocta_enumerate_init_config(vertex, tree, num_robots)
+    starting_configs = enumerate_cocta_signatures(vertex, tree, num_robots)
     current_signature = [UpArrow] if tree.parent(vertex) else []
 
     for start_config in starting_configs:
         next_signature = current_signature[:]+[start_config]
-        yield from cocta_scan_signatures(next_signature, tree, hh)
+        yield from cocta_scan_signatures(next_signature)
 

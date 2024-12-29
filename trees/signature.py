@@ -221,7 +221,7 @@ def enumerate_signatures(vertex: str,
         max_sig_length = tree.size()  # always holds
 
     if heuristics_on:
-        max_sig_length = min(max_sig_length, 8)
+        max_sig_length = min(max_sig_length, 9)
 
     def compute_used_transitions(current_signature: List[FormalConfiguration]) -> Set[FormalConfiguration]:
         used_transitions = set()

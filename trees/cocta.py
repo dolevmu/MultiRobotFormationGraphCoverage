@@ -173,7 +173,7 @@ def cocta_compute_traversal(tree: Tree,
         current_config = next_config
         traversal.append(dict(current_config))
 
-        assert current_config.total() == num_robots, counter
+        assert sum(current_config.values()) == num_robots, counter
         print(f'{counter}, {current_config}')
         counter += 1
 
