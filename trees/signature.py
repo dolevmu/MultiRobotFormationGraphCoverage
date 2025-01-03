@@ -86,6 +86,7 @@ def get_child_key(vertex: str, child: str, signature: Signature, tree: Tree) -> 
                 sig.append(UpArrow)
         else:
             sig.append(config)
+        # TODO: if we do the parent contraction optimization, contract parent here too
 
     return project(child, tuple(sig), tree)
 
@@ -143,6 +144,7 @@ def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
 
     # Pre-computation: get all configurations that occupy vertex
     valid_configurations = enumerate_configurations(vertex, tree, num_robots)
+    # TODO: if we do the parent contraction optimization, remove any config that occupies anything other than parent+subtree(vertex)
 
     # Pre-computation: for each configuration, get list of valid transitions
     valid_transitions = defaultdict(lambda: set())
@@ -152,6 +154,7 @@ def signatures_precompute(vertex: str, tree: Tree, num_robots: int, raw: bool
 
     for configuration in valid_configurations:
         collected_transitions = enumerate_transitions(configuration, tree)
+        # TODO: if we do the parent contraction optimization, remove any config that occupies anything other than parent+subtree(vertex)
 
         for second_configuration in collected_transitions:
             # Handle ↑

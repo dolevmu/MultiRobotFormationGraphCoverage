@@ -44,17 +44,17 @@ if __name__ == '__main__':
 
     # jaxonville_robots_plot(num_robots=3, num_floors=20)
     # adelphi_plot(5)
-    adelphi_robots_plot(num_robots=4, num_floors=20)
+    # adelphi_robots_plot(num_robots=4, num_floors=20)
 
     # traversal = ncocta_compute_traversal(tree, num_robots=3, hh=[2,1])
     # traversal = cocta_compute_traversal(tree, num_robots=4, hh=[3,2,1])
     # print(is_traversal(traversal, tree), len(traversal))
     # print(traversal)
 
-    # jax_fpt_df = pd.read_csv('data/jaxonville_fpt.csv')
-    # adelphi_fpt_df = pd.read_csv('data/adelphi_fpt.csv')
-    # compare_fpt_cocta(jax_fpt_df, jaxsonville_tree)
-    # compare_fpt_cocta(adelphi_fpt_df, adelphi_tree)
+    jax_fpt_df = pd.read_csv('data/jaxonville_fpt.csv')
+    adelphi_fpt_df = pd.read_csv('data/adelphi_fpt.csv')
+    compare_fpt_cocta(jax_fpt_df, jaxsonville_tree)
+    compare_fpt_cocta(adelphi_fpt_df, adelphi_tree)
 
 
 
