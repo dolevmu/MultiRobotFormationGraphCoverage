@@ -17,7 +17,8 @@ from trees.tree import print_tree, hard_example_tree, example_tree, jaxsonville_
 
 from time import time
 
-from plots.graphs import jaxonville_robots_plot, adelphi_plot, adelphi_robots_plot, compare_fpt_cocta
+from plots.graphs import jaxonville_robots_plot, adelphi_plot, adelphi_robots_plot, compare_fpt_cocta, \
+    plot_computation_time_graph, adelphi_avg_num_signatures
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -44,17 +45,19 @@ if __name__ == '__main__':
 
     # jaxonville_robots_plot(num_robots=3, num_floors=20)
     # adelphi_plot(5)
-    # adelphi_robots_plot(num_robots=4, num_floors=20)
+    # adelphi_robots_plot(num_robots=4, num_floors=8)
 
     # traversal = ncocta_compute_traversal(tree, num_robots=3, hh=[2,1])
     # traversal = cocta_compute_traversal(tree, num_robots=4, hh=[3,2,1])
     # print(is_traversal(traversal, tree), len(traversal))
     # print(traversal)
 
-    jax_fpt_df = pd.read_csv('data/jaxonville_fpt.csv')
-    adelphi_fpt_df = pd.read_csv('data/adelphi_fpt.csv')
-    compare_fpt_cocta(jax_fpt_df, jaxsonville_tree)
-    compare_fpt_cocta(adelphi_fpt_df, adelphi_tree)
+    # jax_fpt_df = pd.read_csv('data/jaxonville_fpt.csv')
+    adelphi_fpt_df = pd.read_csv('data/adelphi_fpt_new.csv')
+    # compare_fpt_cocta(jax_fpt_df, jaxsonville_tree)
+    # compare_fpt_cocta(adelphi_fpt_df, adelphi_tree)
 
+    plot_computation_time_graph(adelphi_fpt_df)
+    # adelphi_avg_num_signatures()
 
 

@@ -6,6 +6,7 @@ import pandas as pd
 import seaborn as sns
 
 from trees.cocta import cocta_compute_traversal
+from trees.signature import enumerate_signatures
 from trees.table import fpt_compute_traversal
 from trees.tree import adelphi_tree, jaxsonville_tree
 
@@ -139,14 +140,19 @@ def adelphi_plot(num_floors: int):  # Adelphi Hotel, Melbourne
 def adelphi_robots_plot(num_robots: int, num_floors: int = 5, max_sig_length: int = 8):
     adelphi_df = pd.read_csv('data/adelphi_fpt.csv')
 
-    for floor in range(round(adelphi_df["# Floors"].max()) + 1, num_floors + 1):
+    if adelphi_df.shape[0] == 0:
+        start_floor = 0
+    else:
+        start_floor = round(adelphi_df["# Floors"].max()) + 1
+
+    for floor in range(start_floor, num_floors + 1):
         print(f"Floor {floor}/{num_floors}")
         tree = adelphi_tree(num_floors=floor)
 
         for robots in range(1, num_robots + 1):
             print(f"Robots {robots}/{num_robots}")
             start = time()
-            traversal = fpt_compute_traversal(tree, robots, heuristics_on=True, backtrack=True)
+            traversal = fpt_compute_traversal(tree, robots, heuristics_on=True, backtrack=True, max_sig_length=max_sig_length)
             end = time()
 
             adelphi_df.loc[len(adelphi_df)] = [floor, tree.size(), robots, len(traversal), end - start, (end - start) / 3600]
@@ -201,4 +207,58 @@ def compare_fpt_cocta(fpt_df, tree_generator):
 
     sns.lineplot(data=fpt_df[fpt_df["# Floors"] > 1], x="# Floors", y="% Saved Time", hue="# Robots")
     plt.show()
+
+
+def plot_computation_time_graph(fpt_df):
+    computation_time = "Computation Time (hours)"
+    number_of_nodes = "# Vertices"
+
+    sns.lineplot(data=fpt_df[fpt_df["# Floors"] > 1],
+                 x=number_of_nodes,
+                 y=computation_time,
+                 hue="# Robots")
+    plt.show()
+
+def adelphi_avg_num_signatures():
+    max_sig_length = 8
+    num_robots = 4
+    robots_to_sig_lengths = {1: range(1, max_sig_length),
+                             2: range(1, max_sig_length+1),
+                             3: range(1, max_sig_length+4),
+                             4: range(1, max_sig_length+3)}
+
+    # df = pd.DataFrame(columns=["# Robots", "Signature Max Length", "Avg. # Signatures"])
+    df = pd.read_csv("data/adelphi_pacman_avg_sigs.csv")
+
+    floor = 4
+    tree = adelphi_tree(num_floors=floor)
+
+    for robots in range(1, num_robots + 1):
+    # for robots in robots_to_sig_lengths:
+        print(f"Robots {robots}/{num_robots}")
+        for sig_length in robots_to_sig_lengths[robots]:
+            print(f"Max Sig Length={sig_length}")
+
+            if sum((df["# Robots"] == robots) &
+                   (df["Signature Max Length"] == sig_length)) > 0:
+                continue # Already computed
+
+            avg_num_signatures = 0
+            for vertex in tree.nodes:
+                counter = 0
+                signatures_iterator = enumerate_signatures(vertex, tree, robots, max_sig_length=sig_length)
+                for _ in tqdm(signatures_iterator, desc=f"Vertex={vertex: >4}"):
+                    counter += 1
+                avg_num_signatures += counter
+            avg_num_signatures /= tree.size()
+            df.loc[len(df)] = [robots, sig_length, avg_num_signatures]
+
+    df.to_csv('data/adelphi_pacman_avg_sigs.csv', index=False)
+
+    g = sns.barplot(data=df, x='# Robots', y="Avg. # Signatures", hue="Signature Max Length")
+    g.set_yscale("log")
+    plt.show()
+
+
+
 
