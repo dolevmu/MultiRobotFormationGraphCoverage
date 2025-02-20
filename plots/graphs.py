@@ -2,13 +2,15 @@ from time import time
 from tqdm import tqdm
 
 from matplotlib import pyplot as plt
+import concurrent.futures
 import pandas as pd
 import seaborn as sns
 
 from trees.cocta import cocta_compute_traversal
 from trees.signature import enumerate_signatures
 from trees.table import fpt_compute_traversal
-from trees.tree import adelphi_tree, jaxsonville_tree
+from trees.tree import adelphi_tree, jaxsonville_tree, random_building_tree, MAX_HALL_LENGTH, MIN_HALL_LENGTH, \
+    MAX_HALLS_PER_FLOOR, ROOM_DENSITY, NUM_FLOORS, add_floors_to_tree, increase_room_density, stretch_halls
 
 
 def jaxonville_robots_plot(num_floors: int = 6, num_robots: int = 3, max_sig_length=9):
@@ -260,5 +262,284 @@ def adelphi_avg_num_signatures():
     plt.show()
 
 
+def floor_random_graph_plots(num_samples: int = 100,
+                             load: bool = True,
+                             suffix: str = ''):
+    num_robots = 3
+    num_floors = NUM_FLOORS
+    max_floors_to_add = 10 - num_floors
+    max_num_floors = num_floors + max_floors_to_add
+    room_density = ROOM_DENSITY
+    num_halls_per_floor = MAX_HALLS_PER_FLOOR
+    min_hall_length = MIN_HALL_LENGTH
+    max_hall_length = MAX_HALL_LENGTH
 
+    trees = [random_building_tree() for _ in range(num_samples)]
+
+    if load:
+        floor_df = pd.read_csv(f'data/floor_df{suffix}.csv')
+
+    else:
+        floor_df = pd.DataFrame(columns=["# Vertices", "# Floors", "# Halls", "# Rooms", "# Halls per floor", "Min. hall length", "Max. hall length", "Room Density", "Traversal Time", "% Saved Time", "Computation Time (sec)", "Computation Time (min)"])
+
+        for floors_to_add in range(max_floors_to_add):
+            for sample in range(num_samples):
+                print(f"Floor {num_floors}/{max_num_floors}")
+
+                tree = trees[sample]
+                num_vertices = tree.size()
+                num_halls = sum(v.startswith("Branch") for v in tree.nodes) + num_floors
+                num_rooms = sum(v.startswith("Room") for v in tree.nodes)
+
+                pacman_time = time()
+                try:
+                    pacman_traversal = fpt_compute_traversal(tree, num_robots, heuristics_on=True, backtrack=True,
+                                                             max_sig_length=9)
+                except:
+                    print("Failed")
+                    continue
+                pacman_time = time() - pacman_time
+
+                # cocta_time = time()
+                try:
+                    cocta_traversal = cocta_compute_traversal(tree, num_robots)
+                except:
+                    print("Failed")
+                    continue
+                # cocta_time = time() - cocta_time
+
+                saved_time = (len(cocta_traversal) - len(pacman_traversal)) / len(cocta_traversal) * 100
+
+                floor_df.loc[len(floor_df)] = [num_vertices, num_floors, num_halls, num_rooms, num_halls_per_floor,
+                                             min_hall_length, max_hall_length, room_density,
+                                             len(pacman_traversal), saved_time, pacman_time, pacman_time / 60]
+                # Update tree for next iteration
+                trees[sample] = add_floors_to_tree(tree, 1, num_floors=num_floors)
+            num_floors += 1 # Update number of floors
+
+            # Save progress...
+            floor_df.to_csv(f'data/floor_df{suffix}.csv', index=False)  # Use index=False to avoid saving row indices
+
+    fig, ax1 = plt.subplots(figsize=(10, 8))
+
+    # Plot Traversal Time
+    # ax1.plot(floor_df["# Floors"], floor_df.groupby('# Floors')["Traversal Time"].transform('mean'), label="Traversal Time", color="blue")
+    sns.lineplot(
+        data=floor_df, x="# Floors", y="Traversal Time",
+        ax=ax1, color="blue", label="Traversal Time",
+        estimator="mean", errorbar="ci", err_kws={"alpha": 0.2}
+    )
+    ax1.set_xlabel("# Floors", fontsize=20)
+    ax1.set_ylabel("Traversal Time", color="blue", fontsize=20)
+    ax1.tick_params(axis='y', labelcolor="blue", labelsize=18)
+    ax1.tick_params(axis='x', labelsize=18)
+
+    # Set up secondary y-axis for Computation Time
+    ax2 = ax1.twinx()
+    # ax2.plot(floor_df["# Floors"], floor_df.groupby('# Floors')["% Saved Time"].transform('mean'), label="% Saved Time", color="red")
+    sns.lineplot(
+        data=floor_df, x="# Floors", y="% Saved Time",
+        ax=ax1, color="red", label="% Saved Time",
+        estimator="mean", errorbar="ci", err_kws={"alpha": 0.2}
+    )
+    ax2.set_ylabel("% Saved Time", color="red", fontsize=20)
+    ax2.tick_params(axis='y', labelcolor="red", labelsize=18)
+
+    fig.tight_layout()  # Adjust layout for clarity
+    plt.show()
+
+    floor_df.to_csv('data/floor_df.csv', index=False)  # Use index=False to avoid saving row indices
+
+
+def density_random_graph_plots(num_samples: int = 100,
+                               load: bool = True,
+                               suffix: str = ''):
+    num_floors = NUM_FLOORS
+    num_robots = 3
+
+    num_halls_per_floor = MAX_HALLS_PER_FLOOR
+    min_hall_length = MIN_HALL_LENGTH
+    max_hall_length = MAX_HALL_LENGTH
+
+    trees = [random_building_tree() for _ in range(num_samples)]
+
+    if load:
+        density_df = pd.read_csv(f'data/density_df{suffix}.csv')
+
+    else:
+        density_df = pd.DataFrame(
+            columns=["# Vertices", "# Floors", "# Halls", "# Rooms", "# Halls per floor", "Min. hall length",
+                     "Max. hall length", "Room Density", "Traversal Time", "% Saved Time", "Computation Time (sec)",
+                     "Computation Time (min)"])
+
+        for room_density in [0, 0.2, 0.4, 0.6, 0.8, 1.0]:
+            for sample in range(num_samples):
+                print(f"Room Density = {room_density}")
+
+                tree = trees[sample]
+
+                num_vertices = tree.size()
+                num_halls = sum(v.startswith("Branch") for v in tree.nodes) + NUM_FLOORS
+                num_rooms = sum(v.startswith("Room") for v in tree.nodes)
+
+                pacman_time = time()
+                try:
+                    pacman_traversal = fpt_compute_traversal(tree, num_robots, heuristics_on=True, backtrack=True,
+                                                             max_sig_length=9)
+                except:
+                    print("Failed")
+                pacman_time = time() - pacman_time
+
+                # cocta_time = time()
+                try:
+                    cocta_traversal = cocta_compute_traversal(tree, num_robots)
+                except:
+                    print("Failed")
+                    continue
+                # cocta_time = time() - cocta_time
+
+                saved_time = (len(cocta_traversal) - len(pacman_traversal)) / len(cocta_traversal) * 100
+
+                density_df.loc[len(density_df)] = [num_vertices, num_floors, num_halls, num_rooms, num_halls_per_floor,
+                                               min_hall_length, max_hall_length, room_density,
+                                               len(pacman_traversal), saved_time, pacman_time, pacman_time / 60]
+
+                # Update tree for next iteration
+                trees[sample] = increase_room_density(tree, room_density_to_add=0.2)
+
+            # Save progress...
+            density_df.to_csv(f'data/density_df{suffix}.csv', index=False)  # Use index=False to avoid saving row indices
+
+    fig, ax1 = plt.subplots(figsize=(10, 8))
+
+    # Plot Traversal Time
+    sns.lineplot(
+        data=density_df, x="Room Density", y="Traversal Time",
+        ax=ax1, color="blue", label="Traversal Time",
+        estimator="mean", errorbar="ci", err_kws={"alpha": 0.2}
+    )
+    # ax1.plot(density_df["Room Density"], density_df.groupby("Room Density")["Traversal Time"].transform('mean'),
+    #          label="Traversal Time", color="blue")
+    ax1.set_xlabel("Room Density", fontsize=20)
+    ax1.set_ylabel("Traversal Time", color="blue", fontsize=20)
+    ax1.tick_params(axis='y', labelcolor="blue", labelsize=18)
+    ax1.tick_params(axis='x', labelsize=18)
+
+    # Set up secondary y-axis for Computation Time
+    ax2 = ax1.twinx()
+    sns.lineplot(
+        data=density_df, x="Room Density", y="% Saved Time",
+        ax=ax2, color="red", label="% Saved Time",
+        estimator="mean", errorbar="ci", err_kws={"alpha": 0.2}
+    )
+    # ax2.plot(density_df["Room Density"], density_df.groupby("Room Density")["% Saved Time"].transform('mean'), label="% Saved Time",
+    #          color="red")
+    ax2.set_ylabel("% Saved Time", color="red", fontsize=20)
+    ax2.tick_params(axis='y', labelcolor="red", labelsize=18)
+
+    fig.tight_layout()  # Adjust layout for clarity
+    plt.show()
+
+    density_df.to_csv('data/floor_df.csv', index=False)  # Use index=False to avoid saving row indices
+
+
+def process_sample(tree, num_robots,
+                   hall_length, max_hall_length,
+                   room_density, num_floors,
+                   num_halls_per_floor, min_hall_length):
+    print(f"Hall Length {hall_length}/{max_hall_length}")
+
+    num_vertices = tree.size()
+    num_halls = sum(v.startswith("Branch") for v in tree.nodes) + num_floors
+    num_rooms = sum(v.startswith("Room") for v in tree.nodes)
+
+    pacman_time = time()
+    try:
+        pacman_traversal = fpt_compute_traversal(tree, num_robots, heuristics_on=True, backtrack=True, max_sig_length=9)
+    except:
+        print("Failed")
+        pacman_traversal = []
+
+    pacman_time = time() - pacman_time
+
+    try:
+        cocta_traversal = cocta_compute_traversal(tree, num_robots)
+    except:
+        print("Failed")
+        return None
+
+    saved_time = (len(cocta_traversal) - len(pacman_traversal)) / len(cocta_traversal) * 100 if cocta_traversal else 0
+
+    result = [num_vertices, num_floors, num_halls, num_rooms, num_halls_per_floor,
+              min_hall_length, hall_length, room_density,
+              len(pacman_traversal), saved_time, pacman_time, pacman_time / 60]
+
+    return result
+
+def hall_random_graph_plots(num_samples: int = 100,
+                            load: bool = True,
+                            suffix: str = ''):
+    num_robots = 3
+    num_floors = 2
+    room_density = 0.0
+    max_halls_per_floor = 4
+    min_hall_length = 3
+    max_hall_length = 8
+
+    trees = [random_building_tree() for _ in range(num_samples)]
+
+    if load:
+        floor_df = pd.read_csv(f'data/hall_df{suffix}.csv')
+
+    else:
+        floor_df = pd.DataFrame(columns=["# Vertices", "# Floors", "# Halls", "# Rooms", "# Halls per floor", "Min. hall length", "Max. hall length", "Room Density", "Traversal Time", "% Saved Time", "Computation Time (sec)", "Computation Time (min)"])
+
+        for hall_length in range(min_hall_length, max_hall_length+1):
+            parallel = False
+            if parallel:
+                with concurrent.futures.ProcessPoolExecutor() as executor:
+                    futures = {executor.submit(process_sample, trees[sample], num_robots,
+                                               hall_length, max_hall_length,
+                                               room_density, num_floors,
+                                               max_halls_per_floor, min_hall_length): sample
+                               for sample in range(num_samples)}
+                    for future in concurrent.futures.as_completed(futures):
+                        result = future.result()
+                        if result:
+                            floor_df.loc[len(floor_df)] = result
+                for sample in range(num_samples):
+                    # Update tree for next iteration
+                    trees[sample] = stretch_halls(trees[sample], hall_length_to_add=1, room_density=room_density)
+            else:
+                for sample in range(num_samples):
+                    result = process_sample(trees[sample], num_robots,
+                                            hall_length, max_hall_length,
+                                            room_density, num_floors,
+                                            max_halls_per_floor, min_hall_length)
+                    if result:
+                        floor_df.loc[len(floor_df)] = result
+                    trees[sample] = stretch_halls(trees[sample], hall_length_to_add=1, room_density=room_density)
+
+            # Save progress...
+            floor_df.to_csv(f'data/hall_df{suffix}.csv', index=False)  # Use index=False to avoid saving row indices
+
+    fig, ax1 = plt.subplots(figsize=(10, 8))
+
+    # Plot Traversal Time
+    ax1.plot(floor_df["Max. hall length"], floor_df.groupby("Max. hall length")["Traversal Time"].transform('mean'), label="Traversal Time", color="blue")
+    ax1.set_xlabel("Max. hall length", fontsize=20)
+    ax1.set_ylabel("Traversal Time", color="blue", fontsize=20)
+    ax1.tick_params(axis='y', labelcolor="blue", labelsize=18)
+    ax1.tick_params(axis='x', labelsize=18)
+
+    # Set up secondary y-axis for Computation Time
+    ax2 = ax1.twinx()
+    ax2.plot(floor_df["Max. hall length"], floor_df.groupby("Max. hall length")["% Saved Time"].transform('mean'), label="% Saved Time", color="red")
+    ax2.set_ylabel("% Saved Time", color="red", fontsize=20)
+    ax2.tick_params(axis='y', labelcolor="red", labelsize=18)
+
+    fig.tight_layout()  # Adjust layout for clarity
+    plt.show()
+
+    floor_df.to_csv('data/hall_df.csv', index=False)  # Use index=False to avoid saving row indices
 

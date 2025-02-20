@@ -1,3 +1,5 @@
+import random
+
 from treelib import Tree
 from typing import Optional
 from tqdm import tqdm
@@ -326,5 +328,203 @@ def adelphi_tree(num_floors: int = 2):
         tree.create_node(f"Twin Room {floor}", f"TR{floor}", parent=f"MH6F{floor}")
         tree.create_node(f"Room {floor}{5:02}", f"R{floor}{5:02}", parent=f"TR{floor}")
         tree.create_node(f"Room {floor}{6:02}", f"R{floor}{6:02}", parent=f"TR{floor}")
+
+    return tree
+
+
+NUM_FLOORS = 4
+MAX_HALLS_PER_FLOOR = 6
+BRANCH_PROBABILITY = 0.3
+MIN_HALL_LENGTH = 4
+MAX_HALL_LENGTH = 7
+ROOM_DENSITY = 0.5
+
+def random_building_tree(num_floors: int = NUM_FLOORS,
+                         max_halls_per_floor: int = MAX_HALLS_PER_FLOOR,
+                         min_hall_length: int = MIN_HALL_LENGTH, max_hall_length: int = MAX_HALL_LENGTH,
+                         room_density: float = ROOM_DENSITY):
+    """
+    Generate a random tree structure for a building.
+
+    :param num_floors: Number of floors in the building.
+    :param max_halls_per_floor: Maximum number of halls per floor.
+    :param min_hall_length: Minimum length of each hall in terms of nodes.
+    :param max_hall_length: Maximum length of each hall in terms of nodes.
+    :param room_density: Probability of adding a room to each side of a hall node (0 to 1).
+    :return: A tree representing the building.
+    """
+    tree = Tree()
+
+    # Create the root node for the ground floor
+    tree.create_node("Elevator Floor 1", "EL1")  # Root node
+
+    for floor in range(1, num_floors + 1):
+        if floor > 1:
+            # Create elevator node for each floor
+            tree.create_node(f"Elevator Floor {floor}", f"EL{floor}", parent=f"EL{floor - 1}")
+
+        # Track the number of halls generated to enforce max_halls_per_floor
+        hall_count = 1
+
+        # Ensure exactly one hall comes out of the elevator
+        hall_name = f"Hall Node {floor}-{hall_count}-0"
+        hall_id = f"HN{floor}-{hall_count}-0"
+        tree.create_node(hall_name, hall_id, parent=f"EL{floor}")
+
+        # Generate a full hall chain
+        def generate_hall_chain(parent_node):
+            hall_count = int(parent_node.split('-')[1])
+            hall_length = random.randint(min_hall_length, max_hall_length)
+            current_node = parent_node
+            for depth in range(1, hall_length):
+                chain_name = f"Hall Node {floor}-{hall_count}-{depth}"
+                chain_id = f"HN{floor}-{hall_count}-{depth}"
+                tree.create_node(chain_name, chain_id, parent=current_node)
+                current_node = chain_id
+
+                # Optionally add rooms to the node based on room_density
+                # Do not add at the end of the hall, as this can increase the max degree
+                if random.random() < room_density and depth < hall_length - 1:
+                    left_room_name = f"Left Room {floor}-{hall_count}-{depth}"
+                    left_room_id = f"RL{floor}-{hall_count}-{depth}"
+                    tree.create_node(left_room_name, left_room_id, parent=chain_id)
+                if random.random() < room_density and depth < hall_length - 1:
+                    right_room_name = f"Right Room {floor}-{hall_count}-{depth}"
+                    right_room_id = f"RR{floor}-{hall_count}-{depth}"
+                    tree.create_node(right_room_name, right_room_id, parent=chain_id)
+
+                # Optionally branch new halls at the end of the chain
+                if ((depth == hall_length - 1) and # Only branch at the end of the chain
+                    (hall_count < max_halls_per_floor - 1) and # Limit number of halls per floor
+                    (random.random() < BRANCH_PROBABILITY)): # Randomly decide if to branch or not
+                    num_new_halls = 2
+                    for new_hall in range(1, num_new_halls + 1):
+                        hall_count += 1
+                        new_hall_name = f"Hall Node {floor}-{hall_count}-{0}"
+                        new_hall_id = f"HN{floor}-{hall_count}-{0}"
+                        tree.create_node(new_hall_name, new_hall_id, parent=current_node)
+                        hall_count = generate_hall_chain(new_hall_id)
+            return hall_count
+
+        # Start generating the hall chain
+        generate_hall_chain(hall_id)
+
+    return tree
+
+
+def add_floors_to_tree(tree: Tree, floors_to_add: int, num_floors: int = NUM_FLOORS,
+                       max_halls_per_floor: int = MAX_HALLS_PER_FLOOR,
+                       min_hall_length: int = MIN_HALL_LENGTH, max_hall_length: int = MAX_HALL_LENGTH,
+                       room_density: float = ROOM_DENSITY):
+    """
+    Generate a random tree structure for a building.
+
+    :param num_floors: Number of floors in the building.
+    :param max_halls_per_floor: Maximum number of halls per floor.
+    :param min_hall_length: Minimum length of each hall in terms of nodes.
+    :param max_hall_length: Maximum length of each hall in terms of nodes.
+    :param room_density: Probability of adding a room to each side of a hall node (0 to 1).
+    :return: A tree representing the building.
+    """
+    for floor in range(num_floors + 1, num_floors + floors_to_add + 1):
+        if floor > 1:
+            # Create elevator node for each floor
+            tree.create_node(f"Elevator Floor {floor}", f"EL{floor}", parent=f"EL{floor - 1}")
+
+        # Track the number of halls generated to enforce max_halls_per_floor
+        hall_count = 1
+
+        # Ensure exactly one hall comes out of the elevator
+        hall_name = f"Hall Node {floor}-{hall_count}-0"
+        hall_id = f"HN{floor}-{hall_count}-0"
+        tree.create_node(hall_name, hall_id, parent=f"EL{floor}")
+
+        # Generate a full hall chain
+        def generate_hall_chain(parent_node):
+            hall_count = int(parent_node.split('-')[1])
+            hall_length = random.randint(min_hall_length, max_hall_length)
+            current_node = parent_node
+            for depth in range(1, hall_length):
+                chain_name = f"Hall Node {floor}-{hall_count}-{depth}"
+                chain_id = f"HN{floor}-{hall_count}-{depth}"
+                tree.create_node(chain_name, chain_id, parent=current_node)
+                current_node = chain_id
+
+                # Optionally branch new halls at the end of the chain
+                if ((depth == hall_length - 1) and  # Only branch at the end of the chain
+                        (hall_count < max_halls_per_floor - 1) and  # Limit number of halls per floor
+                        (random.random() < BRANCH_PROBABILITY)):  # Randomly decide if to branch or not
+                    num_new_halls = 2
+                    for new_hall in range(1, num_new_halls + 1):
+                        hall_count += 1
+                        new_hall_name = f"Hall Node {floor}-{hall_count}-{0}"
+                        new_hall_id = f"HN{floor}-{hall_count}-{0}"
+                        tree.create_node(new_hall_name, new_hall_id, parent=current_node)
+                        hall_count = generate_hall_chain(new_hall_id)
+                else:
+                    # Optionally add rooms to the node based on room_density
+                    if random.random() < room_density:
+                        left_room_name = f"Left Room {floor}-{hall_count}-{depth}"
+                        left_room_id = f"RL{floor}-{hall_count}-{depth}"
+                        tree.create_node(left_room_name, left_room_id, parent=chain_id)
+                    if random.random() < room_density:
+                        right_room_name = f"Right Room {floor}-{hall_count}-{depth}"
+                        right_room_id = f"RR{floor}-{hall_count}-{depth}"
+                        tree.create_node(right_room_name, right_room_id, parent=chain_id)
+
+            return hall_count
+
+        # Start generating the hall chain
+        generate_hall_chain(hall_id)
+
+    return tree
+
+
+def stretch_halls(tree: Tree, hall_length_to_add: int, room_density: float = ROOM_DENSITY):
+    """
+    Extends each hall in the tree by hall_length_to_add, adding rooms with given density.
+    Ensures that halls are stretched without introducing splits.
+    """
+
+    for node in list(tree.nodes.values()):
+        if node.identifier.startswith("HN"):
+            floor, hall_count, depth = node.identifier[2:].split('-')
+            # Identify hall nodes
+            hall_nodes = [n for n in tree.nodes.values() if n.identifier.startswith(f"HN{floor}-{hall_count}-")]
+            # Find the last extended node of the hall
+            last_extended_hall = max(hall_nodes, key=lambda n: int(n.identifier.split('-')[-1]))
+            last_depth = int(last_extended_hall.identifier.split('-')[-1])
+            parent_id = last_extended_hall.identifier
+
+            for depth in range(last_depth + 1, last_depth + 1 + random.randint(0, hall_length_to_add)):
+                chain_name = f"Hall Node {floor}-{hall_count}-{depth}"
+                chain_id = f"HN{floor}-{hall_count}-{depth}"
+
+                if chain_id in tree.nodes:
+                    parent_id = chain_id  # Continue from existing extended node
+                    continue  # Skip creating duplicate nodes
+
+                tree.create_node(chain_name, chain_id, parent=parent_id)
+                parent_id = chain_id
+
+                if random.random() < room_density:
+                    tree.create_node(f"Left Room {floor}-{hall_count}-{depth}", f"RL{floor}-{hall_count}-{depth}", parent=chain_id)
+                if random.random() < room_density:
+                    tree.create_node(f"Right Room {floor}-{hall_count}-{depth}", f"RR{floor}-{hall_count}-{depth}", parent=chain_id)
+
+    return tree
+
+
+def increase_room_density(tree: Tree, room_density_to_add: float):
+    """
+    Increases the number of rooms along each hall by sampling additional rooms based on density.
+    """
+    for node in list(tree.nodes.values()):
+        if node.identifier.startswith("HN"):
+            suffix = node.identifier[2:]
+            if f"RL{suffix}" not in tree.nodes and random.random() < room_density_to_add:
+                tree.create_node(f"Room {node.identifier}-L", f"RL{suffix}", parent=node.identifier)
+            if f"RR{suffix}" not in tree.nodes and random.random() < room_density_to_add:
+                tree.create_node(f"Room {node.identifier}-R", f"RR{suffix}", parent=node.identifier)
 
     return tree
