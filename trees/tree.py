@@ -528,3 +528,11 @@ def increase_room_density(tree: Tree, room_density_to_add: float):
                 tree.create_node(f"Room {node.identifier}-R", f"RR{suffix}", parent=node.identifier)
 
     return tree
+
+
+def star_tree_example():
+    tree = Tree()
+    tree.create_node("Node Root", "")  # root node
+    for i in range(10):
+        tree.create_node(f"Node {i}",    f"{i}",    parent="")
+    return tree
