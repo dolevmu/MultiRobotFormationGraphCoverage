@@ -1,24 +1,13 @@
 from collections import Counter
-from math import log, ceil, floor, sqrt
+from math import ceil, sqrt
 
-import numpy as np
-from typing import List, Optional
+from typing import Optional
 from enum import Enum
-
-from tqdm import tqdm
 from treelib import Tree
 
-from trees.configuration import enumerate_config_bottom_up, find_root, Configuration
-from trees.ncocta import H_TABLE
+from trees.configuration import find_root, Configuration
 from trees.table import fpt_compute_traversal
 from trees.traversal import Traversal
-from trees.tree import print_tree
-
-
-class NodeState(Enum):
-    UNVISITED = 1
-    VISITED = 2
-    FINISHED = 3
 
 
 def squeeze_at_root(tree: Tree, start_config: Configuration) -> Traversal:
