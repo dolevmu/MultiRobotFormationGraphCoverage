@@ -7,6 +7,7 @@ from frozendict import frozendict
 from tqdm import tqdm
 
 from exploration.picaboo import picaboo
+from exploration.baby_giant_step import baby_giant_step
 from trees.cocta import cocta_compute_traversal
 from trees.configuration import DownArrow, pack_configuration, unpack_configuration
 from trees.ncocta import ncocta_compute_traversal
@@ -26,18 +27,18 @@ from plots.graphs import jaxonville_robots_plot, adelphi_plot, adelphi_robots_pl
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # tree = example_tree()  # 9
-    tree = hard_example_tree()  # 18
-    tree = star_tree_example()
+    # tree = hard_example_tree()  # 18
+    # tree = star_tree_example()
     # tree = jaxsonville_tree(num_floors=4)
-    # tree = adelphi_tree(num_floors=5)
+    tree = adelphi_tree(num_floors=5)
     # tree = random_building_tree(num_floors=3,
     #                             room_density=0.5,
     #                             max_halls_per_floor=6,
     #                             min_hall_length=2,
     #                             max_hall_length=8)
     print_tree(tree)
-    picaboo_traversal = picaboo(tree, 5)
-    for conf in picaboo_traversal:
+    baby_giant_step = baby_giant_step(tree, 15)
+    for conf in baby_giant_step:
         print(conf)
 
 
