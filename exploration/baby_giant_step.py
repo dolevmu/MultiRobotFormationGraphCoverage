@@ -84,6 +84,8 @@ def baby_giant_step(tree: Tree,
         # Group all robots at r
         gathering = squeeze_at_root(tree, traversal[-1])
         traversal.extend(list(gathering))
+        # Update leaves as we might have cleared some
+        leaves = {leaf for leaf in leaves if leaf in tree.nodes}
         # Expand to dangling leaves equally
         to_dangling = expand_to_dangling_leaves(tree, traversal[-1], leaves)
         traversal.extend(list(to_dangling))

@@ -43,8 +43,6 @@ def squeeze_at_root(tree: Tree, start_config: Configuration) -> Traversal:
 
 
 def expand_from_root(tree: Tree, start_config: Configuration, depth: int) -> (Traversal, Set[str]):
-    if len(start_config.keys()) > 1:
-        print('here')
     assert len(start_config.keys()) == 1
     current_config = start_config
     num_robots = sum(start_config.values())

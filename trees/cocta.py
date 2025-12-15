@@ -34,7 +34,7 @@ def cocta_compute_traversal(tree: Tree,
         if num_robots in H_TABLE:
             hh = H_TABLE[num_robots]
         else:
-            m = floor(log(num_robots, N) - log(log(num_robots, N), N) - 1)
+            m = ceil(log(num_robots, N) - log(log(num_robots, N), N) - 1)
             hm = floor(m + log(m, N) + 5)
             hh = [hm + m - (i + 1) for i in range(m)]
 

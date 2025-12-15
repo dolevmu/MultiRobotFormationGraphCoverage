@@ -21,7 +21,8 @@ class NodeState(Enum):
 
 H_TABLE = {2: [1],
            3: [2,1],
-           4: [3,2,1]}
+           4: [3,2,1],
+           256: [6,5,4,3,2,1]}
 
 def ncocta_compute_traversal(tree: Tree,
                             num_robots: int,
@@ -54,9 +55,6 @@ def ncocta_compute_traversal(tree: Tree,
 
     counter = 1
     while any(state_dict[u] == NodeState.UNFINISHED for u in tree.nodes):
-        if counter == 293:
-            print('here')
-
         next_config = Counter()
         for v in enumerate_config_bottom_up(current_config, tree):
             if all(state_dict[u.identifier] == NodeState.FINISHED for u in tree.children(v)):

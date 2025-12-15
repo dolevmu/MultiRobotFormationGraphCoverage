@@ -1,4 +1,5 @@
 import random
+from math import ceil, sqrt
 
 from treelib import Tree
 from typing import Optional
@@ -536,3 +537,41 @@ def star_tree_example():
     for i in range(10):
         tree.create_node(f"Node {i}",    f"{i}",    parent="")
     return tree
+
+def exploration_tree():
+    k = 16**2
+    delta = ceil(sqrt(k))-1
+    node_counter = 0
+    tree = Tree()
+    tree.create_node("Node 0", "0")  # root node
+    node_counter += 1
+    for branch in range(node_counter, node_counter + delta // 2):
+        tree.create_node(f"Node {node_counter}", f"{node_counter}", parent=f"0")
+        node_counter += 1
+        for chain in range(1, delta):
+            tree.create_node(f"Node {node_counter}",    f"{node_counter}",    parent=f"{node_counter-1}")
+            node_counter += 1
+
+    for branch in range(node_counter, node_counter + delta // 2):
+        tree.create_node(f"Node {node_counter}", f"{node_counter}", parent=f"0")
+        for dense in range(1, delta):
+            tree.create_node(f"Node {(node_counter + dense)}", f"{(node_counter + dense)}", parent=f"{(node_counter + dense // 2)}")
+        node_counter += delta
+
+    return tree
+
+
+def chain_tree(n: int):
+    assert n >= 1
+
+    node_counter = 0
+    tree = Tree()
+    tree.create_node("Node 0", "0")  # root node
+    node_counter += 1
+
+    for i in range(1, n):
+        tree.create_node(f"Node {node_counter}", f"{node_counter}", parent=f"{node_counter-1}")
+        node_counter += 1
+
+    return tree
+

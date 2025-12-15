@@ -2,9 +2,11 @@
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 import cProfile
 
+import numpy as np
 import pandas as pd
 from frozendict import frozendict
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 
 from exploration.picaboo import picaboo
 from exploration.baby_giant_step import baby_giant_step
@@ -16,7 +18,8 @@ from trees.signature import enumerate_signatures, unpack_signature, project, pac
 from trees.table import fpt_compute_traversal, compute_table
 from trees.traversal import print_traversal, is_traversal
 from trees.tree import print_tree, hard_example_tree, example_tree, jaxsonville_tree, adelphi_tree, \
-    random_building_tree, add_floors_to_tree, stretch_halls, increase_room_density, star_tree_example
+    random_building_tree, add_floors_to_tree, stretch_halls, increase_room_density, star_tree_example, exploration_tree, \
+    chain_tree
 
 from time import time
 
@@ -26,21 +29,35 @@ from plots.graphs import jaxonville_robots_plot, adelphi_plot, adelphi_robots_pl
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    tt = []
+    kk = np.array(range(5, 100 + 5, 5))
+    for k in tqdm(kk):
+        tree = chain_tree(k-1)
+        baby_giant = baby_giant_step(tree, k)
+        tt.append(len(baby_giant))
+    plt.plot(kk, tt, label='T(k)')
+    plt.plot(kk, 2*(np.array(kk)**1.5), label='2k^1.5')
+    plt.legend()
+    plt.show()
+
+
+
+
+
+
+
     # tree = example_tree()  # 9
     # tree = hard_example_tree()  # 18
-    # tree = star_tree_example()
     # tree = jaxsonville_tree(num_floors=4)
-    tree = adelphi_tree(num_floors=5)
+    # tree = adelphi_tree(num_floors=5)
     # tree = random_building_tree(num_floors=3,
     #                             room_density=0.5,
     #                             max_halls_per_floor=6,
     #                             min_hall_length=2,
     #                             max_hall_length=8)
-    print_tree(tree)
-    baby_giant_step = baby_giant_step(tree, 15)
-    for conf in baby_giant_step:
-        print(conf)
 
+    # tree = exploration_tree()
+    # print_tree(tree)
 
     # print([len(random_building_tree(num_floors=3,
     #                                 room_density=0.5,
