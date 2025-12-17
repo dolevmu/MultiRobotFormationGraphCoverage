@@ -35,7 +35,7 @@ if __name__ == '__main__':
     # tree = example_tree()  # 9
     # tree = hard_example_tree()  # 18
     # tree = jaxsonville_tree(num_floors=7)
-    tree = adelphi_tree(num_floors=5)
+    tree = adelphi_tree(num_floors=20)
     # tree = random_building_tree(num_floors=3,
     #                             room_density=0.5,
     #                             max_halls_per_floor=6,
@@ -44,7 +44,18 @@ if __name__ == '__main__':
     # tree = exploration_tree()
     print_tree(tree)
 
-    dfs_explore(tree, 25)
+    kk = list(range(5, 100+5, 5))
+    coc = []
+    exp = []
+    for k in tqdm(kk):
+        # exp_traversal, _ = dfs_explore(adelphi_tree(num_floors=20), k)
+        cocta_traversal = cocta_compute_traversal(adelphi_tree(num_floors=5), num_robots=k)
+        # exp.append(len(exp_traversal))
+        # coc.append(len(cocta_traversal))
+    # plt.plot(kk, np.array(exp)/np.array(coc), label='exp. overhead')
+    # plt.plot(kk, 2*np.sqrt(np.array(kk)), label='2 k^1/2')
+    # plt.legend()
+    # plt.show()
 
     # print([len(random_building_tree(num_floors=3,
     #                                 room_density=0.5,

@@ -1,4 +1,4 @@
-from typing import Set, List, Optional, Counter
+from typing import Set, List, Optional, Counter, Tuple
 
 from treelib import Tree
 
@@ -11,7 +11,8 @@ from trees.traversal import Traversal
 
 def dfs_explore(tree: Tree,
                 num_robots: int,
-                start_config: Optional[Configuration] = None) -> Traversal:
+                start_config: Optional[Configuration] = None) -> Tuple[Traversal, Set[str]]:
+    vertices = set(tree.nodes.keys())
     if not start_config:
         start_config = {tree.root: num_robots}
     current_config = start_config
@@ -20,7 +21,8 @@ def dfs_explore(tree: Tree,
     traversal = list(baby_giant_step(tree, num_robots, start_config=start_config))
     # Stop condition: if baby-giant covered the subtree we can recursively return traversal
     if len(tree.nodes) <= 1:
-        return tuple(traversal)
+        deleted = vertices - set(tree.nodes.keys())
+        return tuple(traversal), deleted
 
     # tree-cover the visited subtree
     covering = tree_cover_dfs(Tree(tree, deep=True), num_robots//4)
@@ -34,7 +36,11 @@ def dfs_explore(tree: Tree,
         go_to_root = to_subtree_root(tree, num_robots, subtree_root, current_config)
         traversal.extend(list(go_to_root))
         # Recursively traverse the subtree
-        dfs_recursive_exploration = dfs_explore(get_subtree(tree, subtree), num_robots)
+        dfs_recursive_exploration, to_delete = dfs_explore(get_subtree(tree, subtree), num_robots)
+        # Delete vertices that where traversed
+        for v in to_delete:
+            if v in tree.nodes:
+                tree.remove_node(v)
         traversal.extend(list(dfs_recursive_exploration))
         # Squeeze at root
         squeeze = squeeze_at_root(tree, traversal[-1])
@@ -43,7 +49,8 @@ def dfs_explore(tree: Tree,
         # Gather back at subtree_root
         gathering = to_subtree_root(tree, num_robots, subtree_root, current_config)
         traversal.extend(list(gathering))
-    return tuple(traversal)
+    deleted = vertices - set(tree.nodes.keys())
+    return tuple(traversal), deleted
 
 
 def to_subtree_root(tree: Tree,

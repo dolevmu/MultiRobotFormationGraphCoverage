@@ -28,7 +28,7 @@ def cocta_compute_traversal(tree: Tree,
         return fpt_compute_traversal(tree, 1)
 
     H = tree.depth()  # Tree max depth
-    N = max(len(tree.children(v)) for v in tree.nodes) # Tree max degree
+    N = max(len(tree.children(v)) for v in tree.nodes)  # Tree max degree
 
     if not hh:
         if num_robots in H_TABLE:
