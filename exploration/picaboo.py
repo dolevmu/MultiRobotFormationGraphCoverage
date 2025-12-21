@@ -21,6 +21,9 @@ def squeeze_at_root(tree: Tree, start_config: Configuration) -> Traversal:
     root = find_root(current_config, tree)
     traversal = []
 
+    if root not in tree.nodes:
+        print('here')
+
     while current_config[root] < num_robots:
         next_config = Counter()
         reverse_dfs = [nid for nid in tree.expand_tree(nid=root, mode=Tree.WIDTH, reverse=True)
@@ -39,6 +42,8 @@ def squeeze_at_root(tree: Tree, start_config: Configuration) -> Traversal:
 
         current_config = next_config.copy()
         traversal.append(current_config)
+        if root not in tree.nodes:
+            print('here')
     return tuple(traversal)
 
 

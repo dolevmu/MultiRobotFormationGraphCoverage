@@ -67,14 +67,15 @@ def cocta_compute_traversal(tree: Tree,
                 # v is unfinished, hence, there are still nodes to explore.
                 # If there are more robots than nodes to explore, we can use the rest of the robots
                 # to explore a different subtree.
-                to_explore = 1 + sum(len(list(tree.expand_tree(u)))
-                                     for u in tree.expand_tree(v) if state_dict[u] != NodeState.FINISHED)
+                to_explore = sum(1 for u in tree.expand_tree(v) if state_dict[u] != NodeState.FINISHED)
                 available_robots = current_config[v] - 1
                 if current_config[v] > to_explore:
-                    available_robots = to_explore - 1  # The rest moved to the parent or stay at v
+                    available_robots = to_explore - 1  # The rest moved the parent or stay at v
                     if tree.parent(v):
+                        # Move the rest of the robots up to explore another tree
                         next_config[tree.parent(v).identifier] += current_config[v] - to_explore
                     else:
+                        # Keep at root, they are not need
                         next_config[v] += current_config[v] - to_explore
 
                 if H - tree.depth(v) in hh:
@@ -95,7 +96,8 @@ def cocta_compute_traversal(tree: Tree,
                         next_config[u] += remainder
                         state_dict[u] = NodeState.INHABITED if tree.children(u) else NodeState.FINISHED
 
-                elif H - tree.depth(v) <= hh[0]:
+                # Fix: only split if we can, otherwise go to the else case
+                elif H - tree.depth(v) <= hh[0] and current_config[v] > to_explore:
                     # Leave one robot at v
                     next_config[v] += 1
 
@@ -120,13 +122,15 @@ def cocta_compute_traversal(tree: Tree,
                         next_config[tree.parent(v).identifier] += remainder
                     else:
                         next_config[v] += remainder
+                    if all(state_dict[u.identifier] == NodeState.FINISHED for u in tree.children(v)):
+                        state_dict[v] = NodeState.FINISHED
                 else:
                     # Select a child u of v such that u is unfinished.
                     unfinished_childs = [u.identifier for u in tree.children(v) if state_dict[u.identifier] != NodeState.FINISHED]
 
                     # If child subtree has more nodes to explore than available robots, move all to child
                     u = unfinished_childs[0]
-                    to_explore = len(list(tree.expand_tree(u)))
+                    to_explore = sum(1 for node in tree.expand_tree(u) if state_dict[node] != NodeState.FINISHED)
                     can_jump = not tree.parent(u) or current_config[tree.parent(u)] == 0
                     if to_explore >= current_config[v] and can_jump:
                         next_config[u] += current_config[v]
@@ -136,13 +140,14 @@ def cocta_compute_traversal(tree: Tree,
                         # the rest to.
                         next_config[v] += 1
 
-                        to_explore = np.cumsum([len(list(tree.expand_tree(u))) for u in unfinished_childs])
+                        to_explore = np.cumsum([sum(1 for node in tree.expand_tree(u) if state_dict[node] != NodeState.FINISHED)
+                                                for u in unfinished_childs])
                         childs_to_explore = sum(available_robots >= to_explore)
                         # Move all robots in v to u leaving one robot in v.
                         # If there are more robots than nodes to explore, select another child to move
                         # the rest to.
                         for u in unfinished_childs[:childs_to_explore]:
-                            next_config[u] += len(list(tree.expand_tree(u)))
+                            next_config[u] += sum(1 for node in tree.expand_tree(u) if state_dict[node] != NodeState.FINISHED)
                             state_dict[u] = NodeState.INHABITED if tree.children(u) else NodeState.FINISHED
                         if childs_to_explore > 0:
                             remainder = available_robots - int(to_explore[childs_to_explore - 1])
@@ -155,6 +160,8 @@ def cocta_compute_traversal(tree: Tree,
                             next_config[tree.parent(v).identifier] += remainder
                         else:
                             next_config[v] += remainder
+                        if all(state_dict[u.identifier] == NodeState.FINISHED for u in tree.children(v)):
+                            state_dict[v] = NodeState.FINISHED
             else:
                 # v is inhabited, the subtree is explored but there are still robots in the subtree.
                 # The robots leave one robot behind to maintain communication and drip to the parent node.
@@ -173,7 +180,7 @@ def cocta_compute_traversal(tree: Tree,
         current_config = next_config
         traversal.append(dict(current_config))
 
-        assert sum(current_config.values()) == num_robots, counter
+        assert sum(current_config.values()) == num_robots, f"{counter}, {num_robots}"
         print(f'{counter}, {current_config}')
         counter += 1
 

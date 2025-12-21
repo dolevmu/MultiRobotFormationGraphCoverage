@@ -44,14 +44,16 @@ if __name__ == '__main__':
     # tree = exploration_tree()
     print_tree(tree)
 
-    kk = list(range(5, 100+5, 5))
-    coc = []
-    exp = []
-    for k in tqdm(kk):
-        # exp_traversal, _ = dfs_explore(adelphi_tree(num_floors=20), k)
-        cocta_traversal = cocta_compute_traversal(adelphi_tree(num_floors=5), num_robots=k)
-        # exp.append(len(exp_traversal))
-        # coc.append(len(cocta_traversal))
+    dfs_explore(jaxsonville_tree(num_floors=10), 30)
+
+    # kk = list(range(5, 40))
+    # coc = []
+    # exp = []
+    # for k in tqdm(kk):
+    #     exp_traversal, _ = dfs_explore(jaxsonville_tree(num_floors=10), k)
+    #     cocta_traversal = cocta_compute_traversal(jaxsonville_tree(num_floors=10), num_robots=k)
+    #     exp.append(len(exp_traversal))
+    #     coc.append(len(cocta_traversal))
     # plt.plot(kk, np.array(exp)/np.array(coc), label='exp. overhead')
     # plt.plot(kk, 2*np.sqrt(np.array(kk)), label='2 k^1/2')
     # plt.legend()
