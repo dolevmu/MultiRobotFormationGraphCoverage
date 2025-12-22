@@ -11,7 +11,22 @@ from trees.traversal import Traversal
 
 def dfs_explore(tree: Tree,
                 num_robots: int,
-                start_config: Optional[Configuration] = None) -> Tuple[Traversal, Set[str]]:
+                start_config: Optional[Configuration] = None) -> Traversal:
+    traversal, _ = dfs_explore_internal(Tree(tree, deep=True), num_robots, start_config=start_config)
+
+    if len(traversal) == 0:
+        return traversal
+
+    exploration_traversal = [traversal[0]]
+    for cfg in traversal[1:]:
+        if cfg != exploration_traversal[-1]:
+            exploration_traversal.append(cfg)
+    return tuple(exploration_traversal)
+
+
+def dfs_explore_internal(tree: Tree,
+                         num_robots: int,
+                         start_config: Optional[Configuration] = None) -> Tuple[Traversal, Set[str]]:
     vertices = set(tree.nodes.keys())
     if not start_config:
         start_config = {tree.root: num_robots}
@@ -36,7 +51,7 @@ def dfs_explore(tree: Tree,
         go_to_root = to_subtree_root(tree, num_robots, subtree_root, current_config)
         traversal.extend(list(go_to_root))
         # Recursively traverse the subtree
-        dfs_recursive_exploration, to_delete = dfs_explore(get_subtree(tree, subtree), num_robots)
+        dfs_recursive_exploration, to_delete = dfs_explore_internal(get_subtree(tree, subtree), num_robots)
         traversal.extend(list(dfs_recursive_exploration))
         # Squeeze at root
         squeeze = squeeze_at_root(tree, traversal[-1])

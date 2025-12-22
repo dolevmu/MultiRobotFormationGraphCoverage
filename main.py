@@ -44,14 +44,13 @@ if __name__ == '__main__':
     # tree = exploration_tree()
     print_tree(tree)
 
-    kk = list(range(5, 100+5, 5))
-    kk = list(range(5, 10 + 5, 5))
+    kk = list(range(5, 400+5, 5))
     coc = []
     exp = []
     for k in tqdm(kk):
         print(k)
-        exp_traversal, _ = dfs_explore(jaxsonville_tree(num_floors=10), k)
-        cocta_traversal = cocta_compute_traversal(jaxsonville_tree(num_floors=10), num_robots=k)
+        exp_traversal = dfs_explore(jaxsonville_tree(num_floors=30), k)
+        cocta_traversal = cocta_compute_traversal(jaxsonville_tree(num_floors=30), num_robots=k)
         exp.append(len(exp_traversal))
         coc.append(len(cocta_traversal))
     plt.plot(kk, np.array(exp)/np.array(coc), label='expl. overhead')
