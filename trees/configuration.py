@@ -21,7 +21,9 @@ def find_root(configuration: Configuration, tree: Tree) -> Optional[str]:
     configuration_root = None
     for vertex in configuration:
             if tree.parent(vertex) is None or tree.parent(vertex).identifier not in configuration:
+                # assert configuration_root is None, f"{vertex}"
                 if configuration_root is not None:
+                    print(f"{vertex}")
                     return None  # Multiple roots found, not a single subtree
                 configuration_root = vertex
     return configuration_root

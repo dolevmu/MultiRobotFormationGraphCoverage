@@ -1,7 +1,7 @@
 from collections import Counter
 from math import ceil, sqrt
 
-from typing import Optional, Set
+from typing import Optional, Set, Tuple
 from enum import Enum
 from treelib import Tree
 
@@ -16,13 +16,16 @@ class NodeState(Enum):
 
 
 def squeeze_at_root(tree: Tree, start_config: Configuration) -> Traversal:
-    num_robots = sum(start_config.values())
-    current_config = {nid: count for nid, count in start_config.items() if nid in tree.nodes}
-    root = find_root(current_config, tree)
-    traversal = []
+    v = set(tree.nodes.keys())
+    c = set(start_config.keys())
+    if len(c-v) > 0:
+        assert False
 
-    if root not in tree.nodes:
-        print('here')
+    num_robots = sum(start_config.values())
+    # current_config = {nid: count for nid, count in start_config.items() if nid in tree.nodes}
+    current_config = start_config
+    root = find_root({nid: count for nid, count in start_config.items() if nid in tree.nodes}, tree)
+    traversal = []
 
     while current_config[root] < num_robots:
         next_config = Counter()
@@ -40,10 +43,10 @@ def squeeze_at_root(tree: Tree, start_config: Configuration) -> Traversal:
                 if len(tree.children(node)) == 0:
                     tree.remove_node(node)
 
+        assert sum(next_config.values()) == sum(current_config.values())
         current_config = next_config.copy()
         traversal.append(current_config)
-        if root not in tree.nodes:
-            print('here')
+
     return tuple(traversal)
 
 
@@ -93,7 +96,7 @@ def expand_from_root(tree: Tree, start_config: Configuration, depth: int) -> (Tr
 def picaboo(tree: Tree,
             num_robots: int,
             max_depth: Optional[int] = None,
-            start_config: Optional[Configuration] = None) -> (Traversal, Set[str]):
+            start_config: Optional[Configuration] = None) -> (Traversal, Set[str], Set[str]):
     if max_depth:
         assert max_depth >= 0
     else:
@@ -112,7 +115,8 @@ def picaboo(tree: Tree,
     root = find_root(current_config, tree)
     current_config = {root: num_robots}
     leaves = {root}
-    traversal = [current_config] + list(squeeze_at_root(tree, current_config))
+    squeezing = squeeze_at_root(tree, current_config)
+    traversal = [current_config] + list(squeezing)
     for depth in range(1, max_depth+1):
         # Pica:
         res = expand_from_root(tree, current_config, depth)

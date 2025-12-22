@@ -37,14 +37,14 @@ def dfs_explore(tree: Tree,
         traversal.extend(list(go_to_root))
         # Recursively traverse the subtree
         dfs_recursive_exploration, to_delete = dfs_explore(get_subtree(tree, subtree), num_robots)
-        # Delete vertices that where traversed
-        for v in to_delete:
-            if v in tree.nodes:
-                tree.remove_node(v)
         traversal.extend(list(dfs_recursive_exploration))
         # Squeeze at root
         squeeze = squeeze_at_root(tree, traversal[-1])
         traversal.extend(list(squeeze))
+        # Delete vertices that where traversed
+        for v in to_delete:
+            if v in tree.nodes:
+                tree.remove_node(v)
         current_config = traversal[-1]
         # Gather back at subtree_root
         gathering = to_subtree_root(tree, num_robots, subtree_root, current_config)

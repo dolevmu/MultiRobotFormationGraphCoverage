@@ -34,8 +34,8 @@ if __name__ == '__main__':
 
     # tree = example_tree()  # 9
     # tree = hard_example_tree()  # 18
-    # tree = jaxsonville_tree(num_floors=7)
-    tree = adelphi_tree(num_floors=20)
+    tree = jaxsonville_tree(num_floors=10)
+    # tree = adelphi_tree(num_floors=20)
     # tree = random_building_tree(num_floors=3,
     #                             room_density=0.5,
     #                             max_halls_per_floor=6,
@@ -44,20 +44,22 @@ if __name__ == '__main__':
     # tree = exploration_tree()
     print_tree(tree)
 
-    dfs_explore(jaxsonville_tree(num_floors=10), 30)
+    kk = list(range(5, 100+5, 5))
+    kk = list(range(5, 10 + 5, 5))
+    coc = []
+    exp = []
+    for k in tqdm(kk):
+        print(k)
+        exp_traversal, _ = dfs_explore(jaxsonville_tree(num_floors=10), k)
+        cocta_traversal = cocta_compute_traversal(jaxsonville_tree(num_floors=10), num_robots=k)
+        exp.append(len(exp_traversal))
+        coc.append(len(cocta_traversal))
+    plt.plot(kk, np.array(exp)/np.array(coc), label='expl. overhead')
+    plt.plot(kk, 2*np.sqrt(np.array(kk)), label='2 k^1/2')
+    plt.legend()
+    plt.show()
 
-    # kk = list(range(5, 40))
-    # coc = []
-    # exp = []
-    # for k in tqdm(kk):
-    #     exp_traversal, _ = dfs_explore(jaxsonville_tree(num_floors=10), k)
-    #     cocta_traversal = cocta_compute_traversal(jaxsonville_tree(num_floors=10), num_robots=k)
-    #     exp.append(len(exp_traversal))
-    #     coc.append(len(cocta_traversal))
-    # plt.plot(kk, np.array(exp)/np.array(coc), label='exp. overhead')
-    # plt.plot(kk, 2*np.sqrt(np.array(kk)), label='2 k^1/2')
-    # plt.legend()
-    # plt.show()
+    print('debug')
 
     # print([len(random_building_tree(num_floors=3,
     #                                 room_density=0.5,
