@@ -12,6 +12,7 @@ from exploration import tree_cover
 from exploration.dfs_explore import dfs_explore
 from exploration.picaboo import picaboo
 from exploration.baby_giant_step import baby_giant_step
+from plots.exploration_graphs import exploration_jaxonville_plot, exploration_hall_random_graph_plots
 from trees.cocta import cocta_compute_traversal
 from trees.configuration import DownArrow, pack_configuration, unpack_configuration
 from trees.ncocta import ncocta_compute_traversal
@@ -34,7 +35,7 @@ if __name__ == '__main__':
 
     # tree = example_tree()  # 9
     # tree = hard_example_tree()  # 18
-    tree = jaxsonville_tree(num_floors=10)
+    # tree = jaxsonville_tree(num_floors=10)
     # tree = adelphi_tree(num_floors=20)
     # tree = random_building_tree(num_floors=3,
     #                             room_density=0.5,
@@ -42,23 +43,21 @@ if __name__ == '__main__':
     #                             min_hall_length=2,
     #                             max_hall_length=8)
     # tree = exploration_tree()
-    print_tree(tree)
+    # print_tree(tree)
 
-    kk = list(range(5, 400+5, 5))
-    coc = []
-    exp = []
-    for k in tqdm(kk):
-        print(k)
-        exp_traversal = dfs_explore(jaxsonville_tree(num_floors=30), k)
-        cocta_traversal = cocta_compute_traversal(jaxsonville_tree(num_floors=30), num_robots=k)
-        exp.append(len(exp_traversal))
-        coc.append(len(cocta_traversal))
-    plt.plot(kk, np.array(exp)/np.array(coc), label='expl. overhead')
-    plt.plot(kk, 2*np.sqrt(np.array(kk)), label='2 k^1/2')
-    plt.legend()
-    plt.show()
-
-    print('debug')
+    # kk = list(range(5, 400+5, 5))
+    # coc = []
+    # exp = []
+    # for k in tqdm(kk):
+    #     print(k)
+    #     exp_traversal = dfs_explore(jaxsonville_tree(num_floors=30), k)
+    #     cocta_traversal = cocta_compute_traversal(jaxsonville_tree(num_floors=30), num_robots=k)
+    #     exp.append(len(exp_traversal))
+    #     coc.append(len(cocta_traversal))
+    # plt.plot(kk, np.array(exp)/np.array(coc), label='expl. overhead')
+    # plt.plot(kk, 2*np.sqrt(np.array(kk)), label='2 k^1/2')
+    # plt.legend()
+    # plt.show()
 
     # print([len(random_building_tree(num_floors=3,
     #                                 room_density=0.5,
@@ -67,13 +66,16 @@ if __name__ == '__main__':
     #                                 max_hall_length=8).nodes) for _ in range(100)])
     # traversal = fpt_compute_traversal(tree, num_robots=3, heuristics_on=True)
 
-    # samples = 100
-    # load = True
-    # hall_random_graph_plots(num_samples=samples, load=False, suffix=f'{samples}_samples')
+
+
+    samples = 20
+    load = False
+    exploration_hall_random_graph_plots(num_samples=samples, load=load, suffix=f'{samples}_samples')
     # floor_random_graph_plots(num_samples=samples, load=True, suffix=f'{samples}_samples')
     # density_random_graph_plots(num_samples=samples, load=True, suffix=f'{samples}_samples')
 
 
+    exploration_jaxonville_plot()
     # jaxonville_robots_plot(num_robots=3, num_floors=20)
     # adelphi_robots_plot(num_robots=4, num_floors=8)
 
