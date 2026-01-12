@@ -63,9 +63,9 @@ def expand_from_root(tree: Tree, start_config: Configuration, depth: int) -> (Tr
                       if tree.depth(nid) - tree.depth(root) == depth}
 
     if len(subtree_leaves) == 0:
-        return tuple(), set()
+        return None  # No nodes at this depth - return None to preserve previous leaves
     if len(internal_subtree) + len(subtree_leaves) > num_robots:
-        return
+        return None  # Not enough robots - return None to preserve previous leaves
 
     leaf_budget = num_robots - len(internal_subtree)
     per_leaf_budget = leaf_budget // len(subtree_leaves)
@@ -127,6 +127,64 @@ def picaboo(tree: Tree,
         gathering = squeeze_at_root(tree, traversal[-1])
         traversal.extend(list(gathering))
         # After gathering we are back at current_config with all robots at root
+    return tuple(traversal), leaves
+
+
+def picaboo_optimized(tree: Tree,
+                      num_robots: int,
+                      max_depth: Optional[int] = None,
+                      start_config: Optional[Configuration] = None) -> (Traversal, Set[str], Set[str]):
+    """
+    Optimized picaboo: when at depth i with enough robots to cover depth i+1,
+    continue directly without squeezing back. Saves O(D) steps when robots are plentiful.
+    """
+    if max_depth:
+        assert max_depth >= 0
+    else:
+        max_depth = ceil(sqrt(num_robots))
+
+    if num_robots == 1:
+        return tuple(), set()
+
+    if not start_config:
+        current_config = Counter()
+        current_config[tree.root] = num_robots
+    else:
+        assert sum(start_config.values()) == num_robots
+        current_config = start_config
+
+    root = find_root(current_config, tree)
+    root_depth = tree.depth(root)
+    current_config = {root: num_robots}
+    leaves = {root}
+    squeezing = squeeze_at_root(tree, current_config)
+    traversal = [current_config] + list(squeezing)
+
+    depth = 1
+    while depth <= max_depth:
+        # Pica: expand to current depth
+        res = expand_from_root(tree, current_config, depth)
+        if res:
+            expansion, leaves = res
+            traversal.extend(list(expansion))
+
+            # Optimization: check if we can continue to depth+1 without squeezing
+            if depth < max_depth:
+                # Count nodes needed for depth+1
+                internal_next = [nid for nid in tree.expand_tree(nid=root, mode=Tree.WIDTH)
+                                if tree.depth(nid) - root_depth < depth + 1]
+                frontier_next = [nid for nid in tree.expand_tree(nid=root, mode=Tree.WIDTH)
+                                if tree.depth(nid) - root_depth == depth + 1]
+                if len(internal_next) + len(frontier_next) <= num_robots and len(frontier_next) > 0:
+                    # Can continue to next depth without squeezing
+                    depth += 1
+                    continue
+
+        # Boo: squeeze back to root
+        gathering = squeeze_at_root(tree, traversal[-1])
+        traversal.extend(list(gathering))
+        depth += 1
+
     return tuple(traversal), leaves
 
 

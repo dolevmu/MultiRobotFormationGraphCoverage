@@ -5,7 +5,7 @@ from typing import Optional, Set
 
 from treelib import Tree
 
-from exploration.picaboo import squeeze_at_root, picaboo
+from exploration.picaboo import squeeze_at_root, picaboo, picaboo_optimized
 from trees.configuration import Configuration, find_root
 from trees.table import fpt_compute_traversal
 from trees.traversal import Traversal
@@ -101,7 +101,7 @@ def baby_giant_step(tree: Tree,
         parallel_picaboos = dict()
         gathered_leaves = set()
         for leaf in leaves:
-            res = picaboo(tree, traversal[-1][leaf], max_depth=max_depth, start_config=Counter({leaf: traversal[-1][leaf]}))
+            res = picaboo_optimized(tree, traversal[-1][leaf], max_depth=max_depth, start_config=Counter({leaf: traversal[-1][leaf]}))
             if res:
                 picaboo_session, discovered_leaves = res
                 gathered_leaves |= discovered_leaves
