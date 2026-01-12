@@ -364,7 +364,7 @@ def density_random_graph_plots(num_samples: int = 100,
     trees = [random_building_tree() for _ in range(num_samples)]
 
     if load:
-        density_df = pd.read_csv(f'data/density_df{suffix}.csv')
+        density_df = pd.read_csv(f'data/exploration_density_df_{suffix}.csv')
 
     else:
         density_df = pd.DataFrame(

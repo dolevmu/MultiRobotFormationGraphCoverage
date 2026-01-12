@@ -13,10 +13,24 @@ def tree_cover_dfs(tree: Tree, min_subtree_size: int) -> List[Set[str]]:
 
     tree_collections = list()
     subtree_size_mapping = dict()
+    subtree_depth_mapping = dict()  # Track discovered depth during bottom-up traversal
     dfs_scan = list(tree.expand_tree(mode=Tree.DEPTH))
 
     for node in reversed(dfs_scan):
-        sorted_children = sorted(tree.children(node), key=tree.depth, reverse=True)
+        children = tree.children(node)
+
+        # Compute discovered depth for this node (0 if leaf, 1 + max child depth otherwise)
+        if not children:
+            subtree_depth_mapping[node] = 0
+        else:
+            subtree_depth_mapping[node] = 1 + max(
+                subtree_depth_mapping.get(c.identifier, 0) for c in children
+            )
+
+        # Sort by discovered subtree depth, shallow-first (reverse=False)
+        sorted_children = sorted(children,
+                                 key=lambda c: subtree_depth_mapping.get(c.identifier, 0),
+                                 reverse=False)
 
         subtree_size_mapping[node] = 1
         subtree = {node}

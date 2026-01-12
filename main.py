@@ -12,7 +12,8 @@ from exploration import tree_cover
 from exploration.dfs_explore import dfs_explore
 from exploration.picaboo import picaboo
 from exploration.baby_giant_step import baby_giant_step
-from plots.exploration_graphs import exploration_jaxonville_plot, exploration_hall_random_graph_plots
+from plots.exploration_graphs import exploration_jaxonville_plot, exploration_hall_random_graph_plots, \
+    exploration_density_random_graph_plots, exploration_floor_random_graph_plots
 from trees.cocta import cocta_compute_traversal
 from trees.configuration import DownArrow, pack_configuration, unpack_configuration
 from trees.ncocta import ncocta_compute_traversal
@@ -69,13 +70,13 @@ if __name__ == '__main__':
 
 
     samples = 20
-    load = False
+    load = True
     exploration_hall_random_graph_plots(num_samples=samples, load=load, suffix=f'{samples}_samples')
-    # floor_random_graph_plots(num_samples=samples, load=True, suffix=f'{samples}_samples')
-    # density_random_graph_plots(num_samples=samples, load=True, suffix=f'{samples}_samples')
+    exploration_density_random_graph_plots(num_samples=samples, load=load, suffix=f'{samples}_samples')
+    exploration_floor_random_graph_plots(num_samples=samples, load=load, suffix=f'{samples}_samples')
 
 
-    exploration_jaxonville_plot()
+    # exploration_jaxonville_plot()
     # jaxonville_robots_plot(num_robots=3, num_floors=20)
     # adelphi_robots_plot(num_robots=4, num_floors=8)
 

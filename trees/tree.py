@@ -575,3 +575,299 @@ def chain_tree(n: int):
 
     return tree
 
+
+def random_recursive_tree(n: int, seed: Optional[int] = None) -> Tree:
+    """
+    Generate a Random Recursive Tree (RRT) with exactly n nodes.
+
+    Each new node attaches to a uniformly random existing node.
+    Properties:
+    - Exactly n nodes
+    - Expected depth O(log n)
+    - Natural variation in leaf depths
+    - Tends to be dense and shallow
+
+    :param n: Number of nodes in the tree (must be >= 1)
+    :param seed: Optional random seed for reproducibility
+    :return: A tree with n nodes
+    """
+    assert n >= 1
+
+    if seed is not None:
+        random.seed(seed)
+
+    tree = Tree()
+    tree.create_node("Node 0", "0")  # root node
+
+    node_ids = ["0"]
+    for i in range(1, n):
+        parent = random.choice(node_ids)
+        node_id = str(i)
+        tree.create_node(f"Node {i}", node_id, parent=parent)
+        node_ids.append(node_id)
+
+    return tree
+
+
+def uniform_random_tree(n: int, seed: Optional[int] = None) -> Tree:
+    """
+    Generate a uniformly random labeled tree with exactly n nodes using Prüfer sequences.
+
+    Every labeled tree on n vertices is equally likely to be generated.
+
+    :param n: Number of nodes in the tree (must be >= 1)
+    :param seed: Optional random seed for reproducibility
+    :return: A tree with n nodes rooted at node 0
+    """
+    assert n >= 1
+
+    if seed is not None:
+        random.seed(seed)
+
+    if n == 1:
+        tree = Tree()
+        tree.create_node("Node 0", "0")
+        return tree
+
+    if n == 2:
+        tree = Tree()
+        tree.create_node("Node 0", "0")
+        tree.create_node("Node 1", "1", parent="0")
+        return tree
+
+    # Generate random Prüfer sequence of length n-2
+    prufer = [random.randint(0, n - 1) for _ in range(n - 2)]
+
+    # Decode Prüfer sequence to edge list
+    # Degree of each vertex = count in sequence + 1
+    degree = [1] * n
+    for node in prufer:
+        degree[node] += 1
+
+    # Build edges
+    edges = []
+    for node in prufer:
+        # Find smallest vertex with degree 1
+        for leaf in range(n):
+            if degree[leaf] == 1:
+                edges.append((node, leaf))
+                degree[node] -= 1
+                degree[leaf] -= 1
+                break
+
+    # Add final edge between two remaining degree-1 vertices
+    remaining = [v for v in range(n) if degree[v] == 1]
+    edges.append((remaining[0], remaining[1]))
+
+    # Build adjacency list
+    from collections import defaultdict, deque
+
+    adj = defaultdict(list)
+    for u, v in edges:
+        adj[u].append(v)
+        adj[v].append(u)
+
+    # Pick root uniformly at random
+    root = random.randint(0, n - 1)
+
+    # Build tree rooted at random root using BFS
+    tree = Tree()
+    tree.create_node(f"Node {root}", str(root))
+
+    visited = {root}
+    queue = deque([root])
+    while queue:
+        node = queue.popleft()
+        for neighbor in adj[node]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                tree.create_node(f"Node {neighbor}", str(neighbor), parent=str(node))
+                queue.append(neighbor)
+
+    return tree
+
+
+def preferential_attachment_tree(n: int, alpha: float = 1.0, seed: Optional[int] = None) -> Tree:
+    """
+    Generate a Preferential Attachment (Barabási-Albert) tree with exactly n nodes.
+
+    Each new node attaches to an existing node with probability proportional to (degree + 1)^alpha.
+    Creates "hub" nodes with many children - power-law degree distribution.
+
+    Properties:
+    - Exactly n nodes
+    - Power-law degree distribution
+    - alpha > 1: stronger preference for hubs (bushier trees, lower depth)
+    - alpha < 1: weaker preference (more like RRT)
+    - alpha = 1: standard preferential attachment
+
+    :param n: Number of nodes in the tree (must be >= 1)
+    :param alpha: Exponent for degree preference (default 1.0)
+    :param seed: Optional random seed for reproducibility
+    :return: A tree with n nodes
+    """
+    assert n >= 1
+
+    if seed is not None:
+        random.seed(seed)
+
+    tree = Tree()
+    tree.create_node("Node 0", "0")  # root node
+
+    if n == 1:
+        return tree
+
+    # Track degrees for preferential attachment
+    degrees = [0] * n  # degree = number of children
+    node_ids = [0]
+
+    for i in range(1, n):
+        # Choose parent with probability proportional to (degree + 1)^alpha
+        if alpha == 1.0:
+            # Fast path: use pool-based sampling
+            weights = [degrees[nid] + 1 for nid in node_ids]
+        else:
+            weights = [(degrees[nid] + 1) ** alpha for nid in node_ids]
+
+        total = sum(weights)
+        r = random.random() * total
+        cumsum = 0
+        parent_idx = node_ids[0]
+        for nid, w in zip(node_ids, weights):
+            cumsum += w
+            if r <= cumsum:
+                parent_idx = nid
+                break
+
+        parent = str(parent_idx)
+        node_id = str(i)
+        tree.create_node(f"Node {i}", node_id, parent=parent)
+
+        # Update degrees
+        degrees[parent_idx] += 1
+        node_ids.append(i)
+
+    return tree
+
+
+def low_degree_rrt(n: int, seed: Optional[int] = None) -> Tree:
+    """
+    Generate an RRT with low-degree bias - new nodes prefer attaching to low-degree nodes.
+
+    This forces more branching and creates bushier trees compared to standard RRT.
+
+    Properties:
+    - Exactly n nodes
+    - Higher average branching factor than RRT
+    - More balanced tree structure
+    - Better for parallel exploration
+
+    :param n: Number of nodes in the tree (must be >= 1)
+    :param seed: Optional random seed for reproducibility
+    :return: A tree with n nodes
+    """
+    assert n >= 1
+
+    if seed is not None:
+        random.seed(seed)
+
+    tree = Tree()
+    tree.create_node("Node 0", "0")  # root node
+
+    if n == 1:
+        return tree
+
+    # Track degrees (number of children)
+    degrees = {"0": 0}
+    node_ids = ["0"]
+
+    for i in range(1, n):
+        # Weight by inverse of (degree + 1) - prefer low-degree nodes
+        weights = [1.0 / (degrees[nid] + 1) for nid in node_ids]
+        total = sum(weights)
+        weights = [w / total for w in weights]
+
+        # Weighted random choice
+        r = random.random()
+        cumsum = 0
+        parent = node_ids[0]
+        for nid, w in zip(node_ids, weights):
+            cumsum += w
+            if r <= cumsum:
+                parent = nid
+                break
+
+        node_id = str(i)
+        tree.create_node(f"Node {i}", node_id, parent=parent)
+
+        degrees[parent] += 1
+        degrees[node_id] = 0
+        node_ids.append(node_id)
+
+    return tree
+
+
+def galton_watson_tree(n: int, lam: float = 2.0, seed: Optional[int] = None) -> Tree:
+    """
+    Generate a Galton-Watson tree with approximately n nodes.
+
+    Each node has Poisson(λ) children. The tree is grown until it reaches n nodes.
+
+    Properties:
+    - Exactly n nodes
+    - Expected degree ~ λ (tunable)
+    - Natural branching structure
+    - λ > 1: supercritical (tends to explode), λ < 1: subcritical (tends to die)
+    - λ = 1: critical
+
+    :param n: Number of nodes in the tree (must be >= 1)
+    :param lam: Expected number of children per node (Poisson parameter)
+    :param seed: Optional random seed for reproducibility
+    :return: A tree with n nodes
+    """
+    assert n >= 1
+    assert lam > 0
+
+    if seed is not None:
+        random.seed(seed)
+
+    import numpy as np
+    if seed is not None:
+        np.random.seed(seed)
+
+    tree = Tree()
+    tree.create_node("Node 0", "0")  # root node
+
+    if n == 1:
+        return tree
+
+    node_count = 1
+    frontier = ["0"]  # nodes that can still have children
+    node_id_counter = 1
+
+    while node_count < n and frontier:
+        # Pick a random node from frontier
+        parent_idx = random.randint(0, len(frontier) - 1)
+        parent = frontier[parent_idx]
+
+        # Generate number of children (Poisson)
+        # But limit to not exceed n
+        remaining = n - node_count
+        num_children = min(np.random.poisson(lam), remaining)
+
+        if num_children == 0:
+            # This node won't have more children, remove from frontier
+            frontier.pop(parent_idx)
+        else:
+            # Add children
+            for _ in range(num_children):
+                node_id = str(node_id_counter)
+                tree.create_node(f"Node {node_id_counter}", node_id, parent=parent)
+                frontier.append(node_id)
+                node_id_counter += 1
+                node_count += 1
+                if node_count >= n:
+                    break
+
+    return tree
+
